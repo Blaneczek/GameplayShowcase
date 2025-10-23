@@ -18,10 +18,15 @@ public class GameplayShowcase : ModuleRules
 			"StateTreeModule",
 			"GameplayStateTreeModule",
 			"UMG",
-			"Slate"
+			"Slate",
+			"GameplayTags",
+            "GameplayTasks",
+            "GameplayAbilities",
+            "NavigationSystem",
+            "Niagara"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"GameplayShowcase",

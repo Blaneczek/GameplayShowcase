@@ -1,0 +1,21 @@
+// Copyright (c) 2025 Dawid Szoldra. All rights reserved.
+
+
+#include "AbilitySystem/Data/GSAttributeInfo.h"
+
+FAttributeInfo UGSAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound) const
+{
+	for (const auto& Info : AttributeInformation)
+	{
+		if (Info.AttributeTag.MatchesTagExact(AttributeTag))
+		{
+			return Info;
+		}		
+	}
+
+	if (bLogNotFound)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Can't find Info for AttributeTag [%s] on AttributeInfo [%s]."), *AttributeTag.ToString(), *GetNameSafe(this));
+	}	
+	return FAttributeInfo{};
+}

@@ -79,6 +79,9 @@ protected:
 	TMap<EGameplayCursorType, TEnumAsByte<EMouseCursor::Type>> MouseCursors;
 	UPROPERTY(EditAnywhere, Category="Cursor")
 	TObjectPtr<UNiagaraSystem> CursorHitEffect;
+
+private:
+	void InitializeHUD();
 	
 private:
 	UPROPERTY()

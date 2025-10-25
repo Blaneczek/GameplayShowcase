@@ -2,3 +2,9 @@
 
 
 #include "Public/UI/Widgets/GSWidgetBase.h"
+
+void UGSWidgetBase::SetWidgetController(UObject* InWidgetController)
+{
+	WidgetController = InWidgetController;
+	WidgetControllerSet();
+}

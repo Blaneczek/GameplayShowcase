@@ -5,9 +5,11 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "NiagaraFunctionLibrary.h"
+#include "AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Player/Camera/GSSpringArmComponent.h"
+#include "UI/HUD/GSHUD.h"
 
 
 AGSPlayerController::AGSPlayerController()
@@ -63,6 +65,7 @@ void AGSPlayerController::OnPossess(APawn* aPawn)
 	Super::OnPossess(aPawn);
 	
 	CachedPlayerCharacter = CastChecked<AGSPlayerCharacterBase>(aPawn);
+	InitializeHUD();
 }
 
 void AGSPlayerController::Move(const FInputActionValue& Value)
@@ -144,5 +147,13 @@ void AGSPlayerController::CameraZoom(const FInputActionValue& Value)
 	if (CachedPlayerCharacter)
 	{
 		CachedPlayerCharacter->GetCameraArm()->AddZoomInput(ZoomValue * CameraZoomSpeed);
+	}
+}
+
+void AGSPlayerController::InitializeHUD()
+{
+	if (AGSHUD* GSHUD = Cast<AGSHUD>(GetHUD()))
+	{
+		GSHUD->InitializeOverlayWidget(this, CachedPlayerCharacter, CachedPlayerCharacter->GetAbilitySystemComponent(), CachedPlayerCharacter->GetAttributeSet());
 	}
 }

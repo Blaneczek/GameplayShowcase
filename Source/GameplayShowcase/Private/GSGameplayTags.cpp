@@ -5,8 +5,11 @@
 
 namespace GSGameplayTags
 {
+	/** INPUT **/
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_LeftShift, "Input.LeftShift", "XXX.");
+	/***************/
+	
 	/** ATTRIBUTES **/
-
 	/* Character Attributes */
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attribute_Character_VIT, "Attribute.Character.VIT", "XXX.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attribute_Character_INT, "Attribute.Character.INT", "XXX.");
@@ -34,4 +37,16 @@ namespace GSGameplayTags
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attribute_Primary_Evading, "Attribute.Primary.Evading", "XXX.");
 	/***************/
+
+	/** Statuses **/
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_ST_Regen, "Status.ST.Regen", "XXX.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_ST_Consuming, "Status.ST.Consuming", "XXX.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_ST_Zero, "Status.ST.Zero", "XXX.");
+
+	/** Ability **/
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_GA_Sprint, "Ability.GA.Sprint", "XXX.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Requires_ST, "Ability.Requires.ST", "XXX.");
+
+	/** EVENTS **/
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Character_Movement_Stopped, "Event.Character.Movement.Stopped", "XXX.");
 }

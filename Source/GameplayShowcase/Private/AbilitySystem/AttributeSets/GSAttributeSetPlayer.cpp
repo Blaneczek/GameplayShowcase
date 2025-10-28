@@ -49,6 +49,11 @@ void UGSAttributeSetPlayer::PostGameplayEffectExecute(const struct FGameplayEffe
 
 	if (Data.EvaluatedData.Attribute == GetSTAttribute())
 	{
-		SetST(GetST());
+		SetST(FMath::Clamp(GetST(), 0.f, GetMaxST()));
+		if (GetST() <= 0.f)
+		{	
+			const FGameplayTagContainer Container{GSGameplayTags::Ability_Requires_ST.GetTag()};
+			Data.Target.CancelAbilities(&Container);
+		}
 	}
 }

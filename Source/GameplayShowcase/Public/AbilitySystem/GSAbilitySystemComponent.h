@@ -13,15 +13,13 @@ class GAMEPLAYSHOWCASE_API UGSAbilitySystemComponent : public UAbilitySystemComp
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
 	UGSAbilitySystemComponent();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	virtual void AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) override;
+	
+	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& Abilities);
 
-public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
+	/* Input */
+	void AbilityInputTagHeld(const FGameplayTag& InputTag);
+	void AbilityInputTagReleased(const FGameplayTag& InputTag);
 };

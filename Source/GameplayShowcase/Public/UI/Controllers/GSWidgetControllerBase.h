@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "GameFramework/Character.h"
+#include "AbilitySystemComponent.h"
 #include "GSWidgetControllerBase.generated.h"
 
 class UAttributeSet;
-class UAbilitySystemComponent;
 
 USTRUCT(BlueprintType)
 struct FWidgetControllerParams
@@ -21,16 +22,16 @@ struct FWidgetControllerParams
 	{}
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<APlayerController> PlayerController = nullptr;
+	TWeakObjectPtr<APlayerController> PlayerController = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<ACharacter> Character = nullptr;
+	TWeakObjectPtr<ACharacter> Character = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
+	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TObjectPtr<UAttributeSet> AttributeSet = nullptr;
+	TWeakObjectPtr<UAttributeSet> AttributeSet = nullptr;
 };
 
 /**
@@ -51,14 +52,14 @@ public:
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")
-	TObjectPtr<APlayerController> PlayerController;
+	TWeakObjectPtr<APlayerController> PlayerController;
 
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")
-	TObjectPtr<ACharacter> Character;
+	TWeakObjectPtr<ACharacter> Character;
 
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")
-	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")
-	TObjectPtr<UAttributeSet> AttributeSet;
+	TWeakObjectPtr<UAttributeSet> AttributeSet;
 };

@@ -6,11 +6,15 @@
 #include "GameFramework/PlayerController.h"
 #include "GSPlayerController.generated.h"
 
+class UGSAbilitySystemComponent;
+class UGSInputConfig;
+struct FGameplayTag;
 class UNiagaraSystem;
 class AGSPlayerCharacterBase;
 struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
+
 
 UENUM(BlueprintType)
 enum class EGameplayCursorType : uint8
@@ -48,6 +52,14 @@ private:
 	void EnableLook(const FInputActionValue& Value);
 	void CameraZoom(const FInputActionValue& Value);
 	
+	void AbilityInputTagPressed(FGameplayTag InputTag);
+	void AbilityInputTagReleased(FGameplayTag InputTag);
+	void AbilityInputTagHeld(FGameplayTag InputTag);
+	
+	void InitializeHUD();
+
+	UGSAbilitySystemComponent* GetASC();
+	
 protected:
 	UPROPERTY(EditAnywhere, Category ="Input")
     TObjectPtr<UInputMappingContext> GSContext;
@@ -62,7 +74,10 @@ protected:
 	TObjectPtr<UInputAction> EnableLookAction;
 	UPROPERTY(EditAnywhere, Category ="Input|Action")
 	TObjectPtr<UInputAction> CameraZoomAction;
-
+	
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	TObjectPtr<UGSInputConfig> InputConfig;
+	
 	UPROPERTY(EditAnywhere, Category ="Input|CameraDefaults")
 	float YawRotationSpeed = 2.f;
 	UPROPERTY(EditAnywhere, Category ="Input|CameraDefaults")
@@ -81,11 +96,12 @@ protected:
 	TObjectPtr<UNiagaraSystem> CursorHitEffect;
 
 private:
-	void InitializeHUD();
 	
-private:
 	UPROPERTY()
 	TObjectPtr<AGSPlayerCharacterBase> CachedPlayerCharacter;
 
+	UPROPERTY()
+	TObjectPtr<UGSAbilitySystemComponent> AbilitySystemComponent;
+	
 	bool bCanLook = false;
 };

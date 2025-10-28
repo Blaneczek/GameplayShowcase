@@ -2,12 +2,14 @@
 
 
 #include "Public/Player/GSPlayerController.h"
-#include "EnhancedInputComponent.h"
+
+#include "AbilitySystemBlueprintLibrary.h"
 #include "EnhancedInputSubsystems.h"
 #include "NiagaraFunctionLibrary.h"
-#include "AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
+#include "AbilitySystem/GSAbilitySystemComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
+#include "Input/GSInputComponent.h"
 #include "Player/Camera/GSSpringArmComponent.h"
 #include "UI/HUD/GSHUD.h"
 
@@ -44,19 +46,23 @@ void AGSPlayerController::SetupInputComponent()
 		EnhancedInputSubsystem->AddMappingContext(GSContext, 0);
 	}
 
-	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent))
+	if (UGSInputComponent* GSInputComponent = Cast<UGSInputComponent>(InputComponent))
 	{
-		// Moving
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Started, this, &AGSPlayerController::StopOngoingMovement);
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGSPlayerController::Move);
-		EnhancedInputComponent->BindAction(AutoMoveAction, ETriggerEvent::Triggered, this, &AGSPlayerController::AutoMove);
-		EnhancedInputComponent->BindAction(AutoMoveAction, ETriggerEvent::Completed, this, &AGSPlayerController::StopAutoMove);
+		// Movement
+		GSInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGSPlayerController::Move);
+		GSInputComponent->BindAction(AutoMoveAction, ETriggerEvent::Triggered, this, &AGSPlayerController::AutoMove);
+		GSInputComponent->BindAction(AutoMoveAction, ETriggerEvent::Completed, this, &AGSPlayerController::StopAutoMove);
 
 		// Camera
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGSPlayerController::Look);
-		EnhancedInputComponent->BindAction(EnableLookAction, ETriggerEvent::Started, this, &AGSPlayerController::EnableLook);
-		EnhancedInputComponent->BindAction(EnableLookAction, ETriggerEvent::Completed, this, &AGSPlayerController::EnableLook);
-		EnhancedInputComponent->BindAction(CameraZoomAction, ETriggerEvent::Triggered, this, &AGSPlayerController::CameraZoom);
+		GSInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AGSPlayerController::Look);
+		GSInputComponent->BindAction(EnableLookAction, ETriggerEvent::Started, this, &AGSPlayerController::EnableLook);
+		GSInputComponent->BindAction(EnableLookAction, ETriggerEvent::Completed, this, &AGSPlayerController::EnableLook);
+		GSInputComponent->BindAction(CameraZoomAction, ETriggerEvent::Triggered, this, &AGSPlayerController::CameraZoom);
+
+		// Abilities
+		GSInputComponent->BindAbilityActions(InputConfig, this, &AGSPlayerController::AbilityInputTagPressed,
+																		  &AGSPlayerController::AbilityInputTagHeld,
+																		  &AGSPlayerController::AbilityInputTagReleased);
 	}
 }
 
@@ -69,7 +75,7 @@ void AGSPlayerController::OnPossess(APawn* aPawn)
 }
 
 void AGSPlayerController::Move(const FInputActionValue& Value)
-{	
+{
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 	const FRotator YawRotation{0, GetControlRotation().Yaw, 0};
 
@@ -150,10 +156,41 @@ void AGSPlayerController::CameraZoom(const FInputActionValue& Value)
 	}
 }
 
+void AGSPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
+{
+	
+}
+
+void AGSPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
+{
+	if (GetASC())
+	{
+		GetASC()->AbilityInputTagReleased(InputTag);
+	}
+}
+
+void AGSPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
+{
+	if (GetASC())
+	{
+		GetASC()->AbilityInputTagHeld(InputTag);
+	}
+}
+
 void AGSPlayerController::InitializeHUD()
 {
 	if (AGSHUD* GSHUD = Cast<AGSHUD>(GetHUD()))
 	{
 		GSHUD->InitializeOverlayWidget(this, CachedPlayerCharacter, CachedPlayerCharacter->GetAbilitySystemComponent(), CachedPlayerCharacter->GetAttributeSet());
 	}
+}
+
+UGSAbilitySystemComponent* AGSPlayerController::GetASC()
+{
+	if (!AbilitySystemComponent)
+	{
+		AbilitySystemComponent = Cast<UGSAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn()));
+	}
+	
+	return AbilitySystemComponent;
 }

@@ -2,12 +2,10 @@
 
 #pragma once
 
+#include <functional>
 #include "CoreMinimal.h"
 #include "GSAttributeSetBase.h"
 #include "GSAttributeSetPlayer.generated.h"
-
-template<class T>
-using TStaticFuncPtr = typename TBaseStaticDelegateInstance<T, FDefaultDelegateUserPolicy>::FFuncPtr;
 
 /**
  * 
@@ -24,7 +22,7 @@ public:
 	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
 	
 public:
-	TMap<FGameplayTag, TStaticFuncPtr<FGameplayAttribute()>> TagsToAttributes;
+	TMap<FGameplayTag, TFunctionRef<FGameplayAttribute()>> TagsToAttributes;
 
 	/* VITAL ATTRIBUTES */
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")

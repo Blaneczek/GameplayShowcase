@@ -17,5 +17,5 @@ FAttributeInfo UGSAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& Att
 	{
 		UE_LOG(LogTemp, Error, TEXT("Can't find Info for AttributeTag [%s] on AttributeInfo [%s]."), *AttributeTag.ToString(), *GetNameSafe(this));
 	}	
-	return FAttributeInfo{};
+	return FAttributeInfo();
 }

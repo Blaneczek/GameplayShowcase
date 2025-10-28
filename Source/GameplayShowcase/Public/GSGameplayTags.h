@@ -11,6 +11,11 @@
  */
 namespace GSGameplayTags
 {
+	/** INPUT **/
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LeftShift);
+	/***************/
+
+
 	/** ATTRIBUTES **/
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attribute_Character_VIT);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attribute_Character_INT);
@@ -37,5 +42,21 @@ namespace GSGameplayTags
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attribute_Primary_Evading);
 	/***************/
+
+	/** Statuses **/
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_ST_Regen);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_ST_Consuming);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_ST_Zero);
+
+	/** ABILITIES **/
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_GA_Sprint);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Requires_ST);
+
+	/** EVENTS **/
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Character_Movement_Stopped);
+
+	
 };
+
+
 

@@ -3,34 +3,80 @@
 
 #include "AbilitySystem/GSAbilitySystemComponent.h"
 
+#include "AbilitySystem/Abilities/GSGameplayAbility.h"
 
-// Sets default values for this component's properties
 UGSAbilitySystemComponent::UGSAbilitySystemComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
+
 }
 
-
-// Called when the game starts
-void UGSAbilitySystemComponent::BeginPlay()
+void UGSAbilitySystemComponent::AbilitySpecInputReleased(FGameplayAbilitySpec& Spec)
 {
-	Super::BeginPlay();
+	Super::AbilitySpecInputReleased(Spec);
 
-	// ...
-	
+	// For proper working of WaitInputRelease gameplay ability task
+	if(Spec.IsActive())
+	{
+		TArray<UGameplayAbility*> Instances = Spec.GetAbilityInstances();
+		const FGameplayAbilityActivationInfo& ActivationInfo = Instances.Last()->GetCurrentActivationInfoRef();
+		FPredictionKey OriginalPredictionKey = ActivationInfo.GetActivationPredictionKey();
+		InvokeReplicatedEvent(EAbilityGenericReplicatedEvent::InputReleased, Spec.Handle, OriginalPredictionKey);
+	}
 }
 
-
-// Called every frame
-void UGSAbilitySystemComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                              FActorComponentTickFunction* ThisTickFunction)
+void UGSAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& Abilities)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
+	for (const auto& AbilityClass : Abilities)
+	{
+		if (AbilityClass)
+		{
+			FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
+			if (const UGSGameplayAbility* GSAbility = Cast<UGSGameplayAbility>(AbilitySpec.Ability))
+			{
+				AbilitySpec.GetDynamicSpecSourceTags().AddTag(GSAbility->DefaultInputTag);
+				GiveAbility(AbilitySpec);
+			}
+		}
+	}
 }
+
+void UGSAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+
+	for (auto& AbilitySpec : GetActivatableAbilities())
+	{
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			AbilitySpecInputPressed(AbilitySpec);
+			if (!AbilitySpec.IsActive())
+			{
+				TryActivateAbility(AbilitySpec.Handle);
+			}
+		}
+	}
+}
+
+void UGSAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)
+{
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+
+	for (auto& AbilitySpec : GetActivatableAbilities())
+	{
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			AbilitySpecInputReleased(AbilitySpec);
+		}
+	}
+}
+
+
 

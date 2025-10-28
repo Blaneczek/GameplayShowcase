@@ -6,7 +6,7 @@
 
 void UGSOverlayWidgetController::BroadcastInitialValues()
 {
-	if (const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet))
+	if (const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get()))
 	{
 		OnHPChanged.Broadcast(ASPlayer->GetHP());
         OnMaxHPChanged.Broadcast(ASPlayer->GetMaxHP());	
@@ -23,49 +23,50 @@ void UGSOverlayWidgetController::BroadcastInitialValues()
 
 void UGSOverlayWidgetController::BindCallbacksToDependencies()
 {
-	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet);
-	if (!ASPlayer || !AbilitySystemComponent)
+	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get());
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+	if (!ASPlayer || !ASC)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UGSOverlayWidgetController::BindCallbacksToDependencies | ASPlayer or AbilitySystemComponent is not valid"));
 		return;
 	}
 		
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+	ASC->GetGameplayAttributeValueChangeDelegate(
 		ASPlayer->GetHPAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnHPChanged.Broadcast(Data.NewValue);
 			});
 	
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+	ASC->GetGameplayAttributeValueChangeDelegate(
 		ASPlayer->GetMaxHPAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnMaxHPChanged.Broadcast(Data.NewValue);
 			});
 
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+	ASC->GetGameplayAttributeValueChangeDelegate(
 		ASPlayer->GetPEAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnPEChanged.Broadcast(Data.NewValue);
 			});
 	
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+	ASC->GetGameplayAttributeValueChangeDelegate(
 		ASPlayer->GetMaxPEAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnMaxPEChanged.Broadcast(Data.NewValue);
 			});
 
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+	ASC->GetGameplayAttributeValueChangeDelegate(
 		ASPlayer->GetSTAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnSTChanged.Broadcast(Data.NewValue);
 			});
 	
-	AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(
+	ASC->GetGameplayAttributeValueChangeDelegate(
 		ASPlayer->GetMaxSTAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{

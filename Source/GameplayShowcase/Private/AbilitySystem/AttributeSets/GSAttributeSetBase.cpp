@@ -28,10 +28,10 @@ void UGSAttributeSetBase::PostGameplayEffectExecute(const struct FGameplayEffect
 
 	if (Data.EvaluatedData.Attribute == GetHPAttribute())
 	{
-		SetHP(GetHP());
+		SetHP(FMath::Clamp(GetHP(), 0.f, GetMaxHP()));
 	}
 	else if (Data.EvaluatedData.Attribute == GetPEAttribute())
 	{
-		SetPE(GetPE());
+		SetPE(FMath::Clamp(GetPE(), 0.f, GetMaxPE()));
 	}
 }

@@ -7,7 +7,7 @@
 
 void UGSAttributeMenuWidgetController::BroadcastInitialValues()
 {
-	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet);
+	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get());
 	if (!ASPlayer || !AttributeInfo)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UGSAttributeMenuWidgetController::BroadcastInitialValues | ASPlayer or AttributeInfo is not valid"));
@@ -22,16 +22,17 @@ void UGSAttributeMenuWidgetController::BroadcastInitialValues()
 
 void UGSAttributeMenuWidgetController::BindCallbacksToDependencies()
 {
-	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet);
-	if (!ASPlayer || !AttributeInfo)
+	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get());
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+	if (!ASPlayer || !ASC || !AttributeInfo)
 	{
-		UE_LOG(LogTemp, Error, TEXT("UGSAttributeMenuWidgetController::BindCallbacksToDependencies | ASPlayer or AttributeInfo is not valid"));
+		UE_LOG(LogTemp, Error, TEXT("UGSAttributeMenuWidgetController::BindCallbacksToDependencies | ASPlayer or ASC or AttributeInfo is not valid"));
 		return;
 	}
 	
 	for (auto& Pair : ASPlayer->TagsToAttributes)
 	{
-		AbilitySystemComponent->GetGameplayAttributeValueChangeDelegate(Pair.Value()).AddLambda(
+		ASC->GetGameplayAttributeValueChangeDelegate(Pair.Value()).AddLambda(
 			[this, Pair](const FOnAttributeChangeData& Data)
 			{
 				BroadcastAttributeInfo(Pair.Key, Pair.Value());
@@ -44,6 +45,6 @@ void UGSAttributeMenuWidgetController::BroadcastAttributeInfo(const FGameplayTag
 	const FGameplayAttribute& Attribute) const
 {
 	FAttributeInfo Info = AttributeInfo->FindAttributeInfoForTag(AttributeTag);
-	Info.AttributeValue = Attribute.GetNumericValue(AttributeSet);
+	Info.AttributeValue = Attribute.GetNumericValue(AttributeSet.Get());
 	AttributeInfoDelegate.Broadcast(Info);
 }

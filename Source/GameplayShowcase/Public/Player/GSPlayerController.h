@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "GSPlayerController.generated.h"
 
+class AGSHUD;
 class UGSAbilitySystemComponent;
 class UGSInputConfig;
 struct FGameplayTag;
@@ -55,9 +56,11 @@ private:
 	void AbilityInputTagPressed(FGameplayTag InputTag);
 	void AbilityInputTagReleased(FGameplayTag InputTag);
 	void AbilityInputTagHeld(FGameplayTag InputTag);
-	
-	void InitializeHUD();
 
+	/** UI **/
+	void InitializeHUD();
+	void OpenOrCloseCharacterMenu();
+	
 	UGSAbilitySystemComponent* GetASC();
 	
 protected:
@@ -74,6 +77,8 @@ protected:
 	TObjectPtr<UInputAction> EnableLookAction;
 	UPROPERTY(EditAnywhere, Category ="Input|Action")
 	TObjectPtr<UInputAction> CameraZoomAction;
+	UPROPERTY(EditAnywhere, Category ="Input|Action")
+	TObjectPtr<UInputAction> CharacterMenuAction;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UGSInputConfig> InputConfig;
@@ -95,11 +100,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Cursor")
 	TObjectPtr<UNiagaraSystem> CursorHitEffect;
 
-private:
-	
+private:	
 	UPROPERTY()
 	TObjectPtr<AGSPlayerCharacterBase> CachedPlayerCharacter;
-
+	
+	UPROPERTY()
+	TObjectPtr<AGSHUD> CachedHUD;
+	
 	UPROPERTY()
 	TObjectPtr<UGSAbilitySystemComponent> AbilitySystemComponent;
 	

@@ -54,4 +54,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")
 	FGameplayAttributeData STRegen;
 	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetPlayer, STRegen);
+
+	/* OTHERS ATTRIBUTES */
+	UPROPERTY(BlueprintReadOnly, Category="Attributes")
+	FGameplayAttributeData XP;
+	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetPlayer, XP);
 };

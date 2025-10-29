@@ -3,7 +3,7 @@
 
 #include "Public/UI/HUD/GSHUD.h"
 #include "Blueprint/UserWidget.h"
-#include "UI/Controllers/GSAttributeMenuWidgetController.h"
+#include "UI/Controllers/GSCharacterMenuWidgetController.h"
 #include "UI/Controllers/GSOverlayWidgetController.h"
 #include "UI/Widgets/GSWidgetBase.h"
 
@@ -13,28 +13,24 @@ AGSHUD::AGSHUD()
 
 UGSOverlayWidgetController* AGSHUD::GetOverlayWidgetController(const FWidgetControllerParams& WCParams)
 {
-	if (OverlayWidgetController == nullptr)
-	{
-		OverlayWidgetController = NewObject<UGSOverlayWidgetController>(this, OverlayWidgetControllerClass);
-		OverlayWidgetController->SetWidgetControllerParams(WCParams);
-		OverlayWidgetController->BindCallbacksToDependencies();
-	}	
-	return OverlayWidgetController;
+	return CreateOrGetWidgetController<UGSOverlayWidgetController>(OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
 }
 
-UGSAttributeMenuWidgetController* AGSHUD::GetAttributeMenuWidgetController(const FWidgetControllerParams& WCParams)
+UGSCharacterMenuWidgetController* AGSHUD::GetCharacterMenuWidgetController(const FWidgetControllerParams& WCParams)
 {
-	if (AttributeMenuWidgetController == nullptr)
+	return CreateOrGetWidgetController<UGSCharacterMenuWidgetController>(CharacterMenuWidgetController, CharacterMenuWidgetControllerClass, WCParams);
+}
+
+void AGSHUD::OpenOrCloseCharacterMenu()
+{
+	if (OverlayWidget)
 	{
-		AttributeMenuWidgetController = NewObject<UGSAttributeMenuWidgetController>(this, AttributeMenuWidgetControllerClass);
-		AttributeMenuWidgetController->SetWidgetControllerParams(WCParams);
-		AttributeMenuWidgetController->BindCallbacksToDependencies();
-	}	
-	return AttributeMenuWidgetController;
+		IGSHUDHelper::Execute_OpenOrCloseCharacterMenu(OverlayWidget); 
+	}
 }
 
 void AGSHUD::InitializeOverlayWidget(APlayerController* PC, ACharacter* PlayerChar,
-	UAbilitySystemComponent* ASC, UAttributeSet* AS)
+                                     UAbilitySystemComponent* ASC, UAttributeSet* AS)
 {
 	if (!OverlayWidgetClass || !OverlayWidgetControllerClass)
 	{
@@ -42,8 +38,7 @@ void AGSHUD::InitializeOverlayWidget(APlayerController* PC, ACharacter* PlayerCh
 		return;
 	}
 	
-	UUserWidget* Widget = CreateWidget<UUserWidget>(GetWorld(), OverlayWidgetClass);
-	OverlayWidget = Cast<UGSWidgetBase>(Widget);
+	OverlayWidget = CreateWidget<UGSWidgetBase>(GetWorld(), OverlayWidgetClass);
 
 	const FWidgetControllerParams WidgetControllerParams{PC, PlayerChar, ASC, AS};
 	UGSOverlayWidgetController* WidgetController = GetOverlayWidgetController(WidgetControllerParams);

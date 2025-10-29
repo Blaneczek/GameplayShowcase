@@ -20,4 +20,7 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float SprintSpeedMovement = 700.f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float MinRequiredStamina = 10.f;
 };

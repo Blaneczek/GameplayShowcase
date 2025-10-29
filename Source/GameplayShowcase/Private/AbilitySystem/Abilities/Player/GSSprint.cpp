@@ -13,7 +13,8 @@ bool UGSSprint::CheckCost(const FGameplayAbilitySpecHandle Handle, const FGamepl
 	{
 		return false;
 	}
-	
-	// Minimum Stamina to perform Ability
-	return ActorInfo->AbilitySystemComponent->GetNumericAttribute(UGSAttributeSetPlayer::GetSTAttribute()) >= 1.f;
+
+	// Minimum Stamina to perform Ability and Actor has to be moving
+	return ActorInfo->AbilitySystemComponent->GetNumericAttribute(UGSAttributeSetPlayer::GetSTAttribute()) >= MinRequiredStamina
+		   && ActorInfo->AvatarActor->GetVelocity().SquaredLength() >= 1.f;
 }

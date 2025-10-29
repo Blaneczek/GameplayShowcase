@@ -31,6 +31,9 @@ UGSAttributeSetPlayer::UGSAttributeSetPlayer()
 	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_Defence.GetTag(), GetDefenceAttribute);
 	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_MagicDefence.GetTag(), GetMagicDefenceAttribute);
 	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_Evading.GetTag(), GetEvadingAttribute);
+
+	/* Others Attributes */
+	TagsToAttributes.Add(GSGameplayTags::Attribute_Others_XP.GetTag(), GetXPAttribute);
 }
 
 void UGSAttributeSetPlayer::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const
@@ -54,6 +57,11 @@ void UGSAttributeSetPlayer::PostGameplayEffectExecute(const struct FGameplayEffe
 		{	
 			const FGameplayTagContainer Container{GSGameplayTags::Ability_Requires_ST.GetTag()};
 			Data.Target.CancelAbilities(&Container);
+		}
+		else if (GetST() >= GetMaxST())
+		{
+			// Remove regen effect if stamina is full
+			Data.Target.RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSGameplayTags::Status_ST_Regen.GetTag()));
 		}
 	}
 }

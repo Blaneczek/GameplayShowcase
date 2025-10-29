@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/GSHUDHelper.h"
 #include "GSWidgetBase.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class GAMEPLAYSHOWCASE_API UGSWidgetBase : public UUserWidget
+class GAMEPLAYSHOWCASE_API UGSWidgetBase : public UUserWidget, public IGSHUDHelper
 {
 	GENERATED_BODY()
 	

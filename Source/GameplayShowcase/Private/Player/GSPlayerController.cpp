@@ -63,6 +63,10 @@ void AGSPlayerController::SetupInputComponent()
 		GSInputComponent->BindAbilityActions(InputConfig, this, &AGSPlayerController::AbilityInputTagPressed,
 																		  &AGSPlayerController::AbilityInputTagHeld,
 																		  &AGSPlayerController::AbilityInputTagReleased);
+
+		// Widgets
+		GSInputComponent->BindAction(CharacterMenuAction, ETriggerEvent::Started, this, &AGSPlayerController::OpenOrCloseCharacterMenu);
+		
 	}
 }
 
@@ -70,7 +74,8 @@ void AGSPlayerController::OnPossess(APawn* aPawn)
 {
 	Super::OnPossess(aPawn);
 	
-	CachedPlayerCharacter = CastChecked<AGSPlayerCharacterBase>(aPawn);
+	CachedPlayerCharacter = Cast<AGSPlayerCharacterBase>(aPawn);
+	CachedHUD = GetHUD<AGSHUD>();
 	InitializeHUD();
 }
 
@@ -179,9 +184,17 @@ void AGSPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 
 void AGSPlayerController::InitializeHUD()
 {
-	if (AGSHUD* GSHUD = Cast<AGSHUD>(GetHUD()))
+	if (CachedHUD)
 	{
-		GSHUD->InitializeOverlayWidget(this, CachedPlayerCharacter, CachedPlayerCharacter->GetAbilitySystemComponent(), CachedPlayerCharacter->GetAttributeSet());
+		CachedHUD->InitializeOverlayWidget(this, CachedPlayerCharacter, CachedPlayerCharacter->GetAbilitySystemComponent(), CachedPlayerCharacter->GetAttributeSet());
+	}
+}
+
+void AGSPlayerController::OpenOrCloseCharacterMenu()
+{
+	if (CachedHUD)
+	{
+		CachedHUD->OpenOrCloseCharacterMenu();
 	}
 }
 

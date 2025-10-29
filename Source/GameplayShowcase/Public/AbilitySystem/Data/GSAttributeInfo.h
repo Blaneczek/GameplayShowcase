@@ -25,8 +25,11 @@ struct FAttributeInfo
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FText AttributeDescription = FText();
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    bool bIsMaxAttribute = false;
+	
 	UPROPERTY(BlueprintReadOnly)
-	float AttributeValue = 0.f;
+	float AttributeValue = 0.f;	
 };
 
 /**

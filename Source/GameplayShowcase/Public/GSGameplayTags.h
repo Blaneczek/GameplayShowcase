@@ -41,6 +41,8 @@ namespace GSGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attribute_Primary_MagicDefence);
 	
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attribute_Primary_Evading);
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Attribute_Others_XP);
 	/***************/
 
 	/** Statuses **/

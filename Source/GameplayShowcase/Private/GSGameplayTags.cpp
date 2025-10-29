@@ -36,6 +36,10 @@ namespace GSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attribute_Primary_MagicDefence, "Attribute.Primary.MagicDefence", "XXX.");
 	
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attribute_Primary_Evading, "Attribute.Primary.Evading", "XXX.");
+
+	/* Others Attributes */
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Attribute_Others_XP, "Attribute.Others.XP", "XXX.");
+	
 	/***************/
 
 	/** Statuses **/

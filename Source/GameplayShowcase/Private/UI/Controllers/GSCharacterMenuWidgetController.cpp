@@ -1,11 +1,11 @@
 // Copyright (c) 2025 Dawid Szoldra. All rights reserved.
 
 
-#include "UI/Controllers/GSAttributeMenuWidgetController.h"
+#include "UI/Controllers/GSCharacterMenuWidgetController.h"
 #include "AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 #include "AbilitySystem/Data/GSAttributeInfo.h"
 
-void UGSAttributeMenuWidgetController::BroadcastInitialValues()
+void UGSCharacterMenuWidgetController::BroadcastInitialValues()
 {
 	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get());
 	if (!ASPlayer || !AttributeInfo)
@@ -20,7 +20,7 @@ void UGSAttributeMenuWidgetController::BroadcastInitialValues()
 	}
 }
 
-void UGSAttributeMenuWidgetController::BindCallbacksToDependencies()
+void UGSCharacterMenuWidgetController::BindCallbacksToDependencies()
 {
 	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get());
 	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
@@ -29,7 +29,8 @@ void UGSAttributeMenuWidgetController::BindCallbacksToDependencies()
 		UE_LOG(LogTemp, Error, TEXT("UGSAttributeMenuWidgetController::BindCallbacksToDependencies | ASPlayer or ASC or AttributeInfo is not valid"));
 		return;
 	}
-	
+
+	// Bind Attributes Info
 	for (auto& Pair : ASPlayer->TagsToAttributes)
 	{
 		ASC->GetGameplayAttributeValueChangeDelegate(Pair.Value()).AddLambda(
@@ -39,9 +40,11 @@ void UGSAttributeMenuWidgetController::BindCallbacksToDependencies()
 			}
 		);
 	}
+
+	
 }
 
-void UGSAttributeMenuWidgetController::BroadcastAttributeInfo(const FGameplayTag& AttributeTag,
+void UGSCharacterMenuWidgetController::BroadcastAttributeInfo(const FGameplayTag& AttributeTag,
 	const FGameplayAttribute& Attribute) const
 {
 	FAttributeInfo Info = AttributeInfo->FindAttributeInfoForTag(AttributeTag);

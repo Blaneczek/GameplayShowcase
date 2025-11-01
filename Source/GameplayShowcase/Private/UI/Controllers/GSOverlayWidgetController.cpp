@@ -2,74 +2,93 @@
 
 
 #include "UI/Controllers/GSOverlayWidgetController.h"
-#include "AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
+
+#include "Characters/Player/GSPlayerCharacterBase.h"
+#include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
+#include "Systems/Leveling/GSLevelingComponent.h"
 
 void UGSOverlayWidgetController::BroadcastInitialValues()
 {
-	if (const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get()))
+	if (const UGSAttributeSetPlayer* AS = Cast<UGSAttributeSetPlayer>(AttributeSet))
 	{
-		OnHPChanged.Broadcast(ASPlayer->GetHP());
-        OnMaxHPChanged.Broadcast(ASPlayer->GetMaxHP());	
-        OnPEChanged.Broadcast(ASPlayer->GetPE());
-        OnMaxPEChanged.Broadcast(ASPlayer->GetMaxPE());
-		OnSTChanged.Broadcast(ASPlayer->GetST());
-		OnMaxSTChanged.Broadcast(ASPlayer->GetMaxST());
+		OnHPChanged.Broadcast(AS->GetHP());
+        OnMaxHPChanged.Broadcast(AS->GetMaxHP());	
+        OnPEChanged.Broadcast(AS->GetPE());
+        OnMaxPEChanged.Broadcast(AS->GetMaxPE());
+		OnSTChanged.Broadcast(AS->GetST());
+		OnMaxSTChanged.Broadcast(AS->GetMaxST());
 	}
-	else
+
+	if (const UGSLevelingComponent* LevelingComponent = UGSLevelingComponent::FindLevelingComponent(Character))
 	{
-		UE_LOG(LogTemp, Error, TEXT("UGSOverlayWidgetController::BroadcastInitialValues | ASPlayer is not valid"));
+		OnXPPercentChangedDelegate.Broadcast(LevelingComponent->GetCurrentLevelInfo().XPPercent);
 	}
 }
 
 void UGSOverlayWidgetController::BindCallbacksToDependencies()
 {
-	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get());
-	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
-	if (!ASPlayer || !ASC)
+	const UGSAttributeSetPlayer* AS = Cast<UGSAttributeSetPlayer>(AttributeSet);
+	UAbilitySystemComponent* ASC = AbilitySystemComponent;
+	if (!AS || !ASC)
 	{
-		UE_LOG(LogTemp, Error, TEXT("UGSOverlayWidgetController::BindCallbacksToDependencies | ASPlayer or AbilitySystemComponent is not valid"));
 		return;
 	}
-		
+
 	ASC->GetGameplayAttributeValueChangeDelegate(
-		ASPlayer->GetHPAttribute()).AddLambda(
+		AS->GetHPAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnHPChanged.Broadcast(Data.NewValue);
 			});
 	
 	ASC->GetGameplayAttributeValueChangeDelegate(
-		ASPlayer->GetMaxHPAttribute()).AddLambda(
+		AS->GetMaxHPAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnMaxHPChanged.Broadcast(Data.NewValue);
 			});
 
 	ASC->GetGameplayAttributeValueChangeDelegate(
-		ASPlayer->GetPEAttribute()).AddLambda(
+		AS->GetPEAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnPEChanged.Broadcast(Data.NewValue);
 			});
 	
 	ASC->GetGameplayAttributeValueChangeDelegate(
-		ASPlayer->GetMaxPEAttribute()).AddLambda(
+		AS->GetMaxPEAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnMaxPEChanged.Broadcast(Data.NewValue);
 			});
 
 	ASC->GetGameplayAttributeValueChangeDelegate(
-		ASPlayer->GetSTAttribute()).AddLambda(
+		AS->GetSTAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnSTChanged.Broadcast(Data.NewValue);
 			});
 	
 	ASC->GetGameplayAttributeValueChangeDelegate(
-		ASPlayer->GetMaxSTAttribute()).AddLambda(
+		AS->GetMaxSTAttribute()).AddLambda(
 			[this](const FOnAttributeChangeData& Data)
 			{
 				OnMaxSTChanged.Broadcast(Data.NewValue);
-			});	
+			});
+
+	ASC->GetGameplayAttributeValueChangeDelegate(
+		AS->GetMaxSTAttribute()).AddLambda(
+			[this](const FOnAttributeChangeData& Data)
+			{
+				OnMaxSTChanged.Broadcast(Data.NewValue);
+			});
+
+	if (UGSLevelingComponent* LevelingComponent = UGSLevelingComponent::FindLevelingComponent(Character))
+	{
+		LevelingComponent->OnXPChangedDelegate.AddLambda([this](const FCurrentLevelInfo& Info) 
+		{
+			OnXPPercentChangedDelegate.Broadcast(Info.XPPercent);
+		});
+	}
 }
+

@@ -6,6 +6,8 @@
 #include "GSWidgetControllerBase.h"
 #include "GSOverlayWidgetController.generated.h"
 
+class UGSLevelingComponent;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeChangedSignature, float, NewValue);
 
 /**
@@ -38,4 +40,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
 	FOnAttributeChangedSignature OnMaxSTChanged;
 
+	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
+	FOnAttributeChangedSignature OnXPPercentChangedDelegate;
+
+private:
+	TWeakObjectPtr<UGSLevelingComponent> CachedLevelingComponent;
 };

@@ -22,7 +22,7 @@ public:
 	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
 	
 public:
-	TMap<FGameplayTag, TFunctionRef<FGameplayAttribute()>> TagsToAttributes;
+	TMap<FGameplayTag, FGameplayAttribute(*)()> TagsToAttributes;
 
 	/* VITAL ATTRIBUTES */
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")

@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Dawid Szoldra. All rights reserved.
 
 
-#include "AbilitySystem/Data/GSAttributeInfo.h"
+#include "Systems/AbilitySystem/Data/GSAttributeInfo.h"
 
 FAttributeInfo UGSAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound) const
 {

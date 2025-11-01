@@ -6,6 +6,23 @@
 #include "Components/ActorComponent.h"
 #include "GSLevelingComponent.generated.h"
 
+struct FCurrentLevelInfo
+{
+	FCurrentLevelInfo() = default;
+	FCurrentLevelInfo(int32 inXP, int32 inMaxXP, float inXPPercent)
+		: XP(inXP), MaxXP(inMaxXP), XPPercent(inXPPercent){}
+
+	int32 XP = 0;
+	int32 MaxXP = 0;
+	float XPPercent = 0.f;
+};
+
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelUpSignature, int32 /* NewLevel*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnXPChangedSignature, const FCurrentLevelInfo& /* CurrentLevelInfo */);
+
+class UGSAttributeSetPlayer;
+class UGSLevelUpInfo;
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class GAMEPLAYSHOWCASE_API UGSLevelingComponent : public UActorComponent
@@ -13,15 +30,42 @@ class GAMEPLAYSHOWCASE_API UGSLevelingComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this component's properties
 	UGSLevelingComponent();
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+	// Returns the Leveling component if one exists on the specified actor.
+	UFUNCTION(BlueprintPure, Category = "GS|Leveling")
+	static UGSLevelingComponent* FindLevelingComponent(const AActor* Actor);
+	
+	UFUNCTION(BlueprintCallable, Category = "GS|Leveling")
+	void SetLevel(int32 NewLevel);
 
+	UFUNCTION(BlueprintCallable, Category = "GS|Leveling")
+	void AddToXP(int32 InXP);
+	
+	void LevelUp(int32 InLevel);
+	
+	FORCEINLINE int32 GetLevel() const;
+	FORCEINLINE int32 GetXP() const;
+
+	FCurrentLevelInfo GetCurrentLevelInfo() const;
+		
+protected:
+	virtual void BeginPlay() override;
+	
+	
 public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UGSLevelUpInfo> LevelUpInfo;
+
+	FOnLevelUpSignature OnLevelUpDelegate;
+
+	FOnXPChangedSignature OnXPChangedDelegate;
+	
+protected:
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	int32 Level = 1;
+	
+private:
+	TWeakObjectPtr<UGSAttributeSetPlayer> AttributeSet;
 };
+

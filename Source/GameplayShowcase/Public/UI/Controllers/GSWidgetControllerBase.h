@@ -22,16 +22,16 @@ struct FWidgetControllerParams
 	{}
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<APlayerController> PlayerController = nullptr;
+	TObjectPtr<APlayerController> PlayerController = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<ACharacter> Character = nullptr;
+	TObjectPtr<ACharacter> Character = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TWeakObjectPtr<UAttributeSet> AttributeSet = nullptr;
+	TObjectPtr<UAttributeSet> AttributeSet = nullptr;
 };
 
 /**
@@ -52,14 +52,14 @@ public:
 	
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")
-	TWeakObjectPtr<APlayerController> PlayerController;
+	TObjectPtr<APlayerController> PlayerController;
 
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")
-	TWeakObjectPtr<ACharacter> Character;
+	TObjectPtr<ACharacter> Character;
 
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")
-	TWeakObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
 
 	UPROPERTY(BlueprintReadOnly, Category = "WidgetController")
-	TWeakObjectPtr<UAttributeSet> AttributeSet;
+	TObjectPtr<UAttributeSet> AttributeSet;
 };

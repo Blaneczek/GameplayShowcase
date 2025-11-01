@@ -4,11 +4,12 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "GSGameplayTags.h"
-#include "AbilitySystem/GSAbilitySystemComponent.h"
-#include "AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
+#include "Systems/AbilitySystem/GSAbilitySystemComponent.h"
+#include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Player/Camera/GSCameraComponent.h"
 #include "Player/Camera/GSSpringArmComponent.h"
+#include "Systems/Leveling/GSLevelingComponent.h"
 
 
 AGSPlayerCharacterBase::AGSPlayerCharacterBase()
@@ -24,6 +25,7 @@ AGSPlayerCharacterBase::AGSPlayerCharacterBase()
 
 	AbilitySystemComponent = CreateDefaultSubobject<UGSAbilitySystemComponent>("AbilitySystemComponent");
 	AttributeSet = CreateDefaultSubobject<UGSAttributeSetPlayer>(TEXT("AttributeSet"));
+	LevelingComponent = CreateDefaultSubobject<UGSLevelingComponent>(TEXT("LevelingComponent"));
 }
 
 void AGSPlayerCharacterBase::InitAbilityActorInfo()
@@ -123,6 +125,11 @@ UAbilitySystemComponent* AGSPlayerCharacterBase::GetAbilitySystemComponent() con
 UAttributeSet* AGSPlayerCharacterBase::GetAttributeSet() const
 {
 	return AttributeSet;
+}
+
+UGSLevelingComponent* AGSPlayerCharacterBase::GetLevelingComponent() const
+{
+	return LevelingComponent;
 }
 
 void AGSPlayerCharacterBase::SetMovementSpeed(bool bSprint, float NewSpeed)

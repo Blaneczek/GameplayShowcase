@@ -11,7 +11,9 @@ struct FGameplayTag;
 class UGSAttributeInfo;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributeInfoSignature, const FAttributeInfo&, Info);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FUpgradePointSignature, int32, NumberOfAvailablePoints);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCurrentLevelXPChangedSignature, int32, XP, int32, MaxXP);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelChangedSignature, int32, NewLevel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributePointSignature, int32, NumOfAvailablePoints);
 
 /**
  * 
@@ -25,13 +27,28 @@ public:
 	virtual void BroadcastInitialValues() override;
 	virtual void BindCallbacksToDependencies() override;
 
+protected:
+	UFUNCTION(BlueprintCallable, Category = "GAS|Attributes")
+	void SpendAttributePoint(const FGameplayTag& AttributeTag);
+	
+private:
+	void BroadcastAttributeInfo(const FGameplayTag& AttributeTag, const FGameplayAttribute& Attribute) const;
+
+	/* New upgrade point after 25%, 50%, 75% */
+	void CheckIfNewUpgradePoint(float NewPercent);
+	
+public:
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
 	FAttributeInfoSignature AttributeInfoDelegate;
-
-	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
-	FAttributeInfoSignature UpgradePointDelegate;
 	
-	//void AddNewUpgradePoint();
+	UPROPERTY(BlueprintAssignable, Category="GS|Leveling")
+	FOnLevelChangedSignature OnLevelChanged;
+	
+	UPROPERTY(BlueprintAssignable, Category="GS|Leveling")
+	FOnCurrentLevelXPChangedSignature OnXPChanged;
+	
+	UPROPERTY(BlueprintAssignable, Category="GS|Leveling")
+	FAttributePointSignature OnAttributePointDelegate;
 	
 protected:
 	UPROPERTY(EditDefaultsOnly)
@@ -41,5 +58,10 @@ protected:
 	int32 UpgradePointsAvailable = 0;
 	
 private:
-	void BroadcastAttributeInfo(const FGameplayTag& AttributeTag, const FGameplayAttribute& Attribute) const;
+	int32 Level = 1;
+	int32 LevelsDelta = 0;
+	float LevelPercent = 0.0f;
+
+
+	
 };

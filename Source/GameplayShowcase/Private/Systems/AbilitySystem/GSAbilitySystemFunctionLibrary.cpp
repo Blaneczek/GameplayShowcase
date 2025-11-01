@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Dawid Szoldra. All rights reserved.
 
 
-#include "AbilitySystem/GSAbilitySystemFunctionLibrary.h"
+#include "Systems/AbilitySystem/GSAbilitySystemFunctionLibrary.h"
 
 UGSOverlayWidgetController* UGSAbilitySystemFunctionLibrary::GetOverlayWidgetController(
 	const UObject* WorldContextObject)

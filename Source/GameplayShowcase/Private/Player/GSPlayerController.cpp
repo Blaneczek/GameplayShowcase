@@ -6,7 +6,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "EnhancedInputSubsystems.h"
 #include "NiagaraFunctionLibrary.h"
-#include "AbilitySystem/GSAbilitySystemComponent.h"
+#include "Systems/AbilitySystem/GSAbilitySystemComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Input/GSInputComponent.h"

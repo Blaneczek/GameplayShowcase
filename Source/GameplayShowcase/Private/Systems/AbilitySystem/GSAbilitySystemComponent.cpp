@@ -1,9 +1,8 @@
 // Copyright (c) 2025 Dawid Szoldra. All rights reserved.
 
 
-#include "AbilitySystem/GSAbilitySystemComponent.h"
-
-#include "AbilitySystem/Abilities/GSGameplayAbility.h"
+#include "Systems/AbilitySystem/GSAbilitySystemComponent.h"
+#include "Systems/AbilitySystem/Abilities/GSGameplayAbility.h"
 
 UGSAbilitySystemComponent::UGSAbilitySystemComponent()
 {

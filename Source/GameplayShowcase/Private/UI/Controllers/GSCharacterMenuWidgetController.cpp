@@ -2,36 +2,46 @@
 
 
 #include "UI/Controllers/GSCharacterMenuWidgetController.h"
-#include "AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
-#include "AbilitySystem/Data/GSAttributeInfo.h"
+
+#include "AbilitySystemBlueprintLibrary.h"
+#include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
+#include "Systems/AbilitySystem/Data/GSAttributeInfo.h"
+#include "Systems/Leveling/GSLevelingComponent.h"
 
 void UGSCharacterMenuWidgetController::BroadcastInitialValues()
 {
-	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get());
-	if (!ASPlayer || !AttributeInfo)
+	const UGSAttributeSetPlayer* AS = Cast<UGSAttributeSetPlayer>(AttributeSet);
+	if (!AS || !AttributeInfo)
 	{
-		UE_LOG(LogTemp, Error, TEXT("UGSAttributeMenuWidgetController::BroadcastInitialValues | ASPlayer or AttributeInfo is not valid"));
 		return;
 	}
 
-	for (auto& Pair : ASPlayer->TagsToAttributes)
+	for (auto& Pair : AS->TagsToAttributes)
 	{
 		BroadcastAttributeInfo(Pair.Key, Pair.Value());
 	}
+
+	if (const UGSLevelingComponent* LevelingComponent = UGSLevelingComponent::FindLevelingComponent(Character))
+	{
+		const FCurrentLevelInfo Info = LevelingComponent->GetCurrentLevelInfo();
+		OnXPChanged.Broadcast(Info.XP, Info.MaxXP);
+		OnLevelChanged.Broadcast(LevelingComponent->GetLevel());
+	}
+
+	OnAttributePointDelegate.Broadcast(UpgradePointsAvailable);
 }
 
 void UGSCharacterMenuWidgetController::BindCallbacksToDependencies()
 {
-	const UGSAttributeSetPlayer* ASPlayer = Cast<UGSAttributeSetPlayer>(AttributeSet.Get());
-	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
-	if (!ASPlayer || !ASC || !AttributeInfo)
+	const UGSAttributeSetPlayer* AS = Cast<UGSAttributeSetPlayer>(AttributeSet);
+	UAbilitySystemComponent* ASC = AbilitySystemComponent;
+	if (!AS || !ASC || !AttributeInfo)
 	{
-		UE_LOG(LogTemp, Error, TEXT("UGSAttributeMenuWidgetController::BindCallbacksToDependencies | ASPlayer or ASC or AttributeInfo is not valid"));
 		return;
 	}
 
 	// Bind Attributes Info
-	for (auto& Pair : ASPlayer->TagsToAttributes)
+	for (auto& Pair : AS->TagsToAttributes)
 	{
 		ASC->GetGameplayAttributeValueChangeDelegate(Pair.Value()).AddLambda(
 			[this, Pair](const FOnAttributeChangeData& Data)
@@ -41,13 +51,60 @@ void UGSCharacterMenuWidgetController::BindCallbacksToDependencies()
 		);
 	}
 
+	if (UGSLevelingComponent* LevelingComponent = UGSLevelingComponent::FindLevelingComponent(Character))
+	{
+		LevelingComponent->OnLevelUpDelegate.AddLambda([this](int NewLevel) 
+		{
+			LevelsDelta = NewLevel - Level;
+			Level = NewLevel;
+			OnLevelChanged.Broadcast(NewLevel);
+		});
+		LevelingComponent->OnXPChangedDelegate.AddLambda([this](const FCurrentLevelInfo& Info) 
+		{
+			CheckIfNewUpgradePoint(Info.XPPercent);
+			OnXPChanged.Broadcast(Info.XP, Info.MaxXP);
+		});
+	}
+}
+
+void UGSCharacterMenuWidgetController::SpendAttributePoint(const FGameplayTag& AttributeTag)
+{
+	if (UpgradePointsAvailable < 1)
+	{
+		return;
+	}
 	
+	if (const UGSAttributeSetPlayer* AS = Cast<UGSAttributeSetPlayer>(AttributeSet))
+	{
+		if (const auto FuncPtr = AS->TagsToAttributes.Find(AttributeTag); AbilitySystemComponent)
+		{
+			AbilitySystemComponent->ApplyModToAttribute((*FuncPtr)(), EGameplayModOp::AddFinal, 1.f);
+			
+			UpgradePointsAvailable--;
+			OnAttributePointDelegate.Broadcast(UpgradePointsAvailable);
+		}
+	}
 }
 
 void UGSCharacterMenuWidgetController::BroadcastAttributeInfo(const FGameplayTag& AttributeTag,
-	const FGameplayAttribute& Attribute) const
+                                                              const FGameplayAttribute& Attribute) const
 {
 	FAttributeInfo Info = AttributeInfo->FindAttributeInfoForTag(AttributeTag);
-	Info.AttributeValue = Attribute.GetNumericValue(AttributeSet.Get());
+	Info.AttributeValue = Attribute.GetNumericValue(AttributeSet);
 	AttributeInfoDelegate.Broadcast(Info);
+}
+
+void UGSCharacterMenuWidgetController::CheckIfNewUpgradePoint(float NewPercent)
+{
+	const uint8 a = LevelPercent / 25;
+    const uint8 b = NewPercent / 25;
+        
+     // New Upgrade point
+    if (b > a)
+    {
+    	UpgradePointsAvailable += (b-a);
+    	OnAttributePointDelegate.Broadcast(UpgradePointsAvailable);
+    }
+
+	LevelPercent = NewPercent;
 }

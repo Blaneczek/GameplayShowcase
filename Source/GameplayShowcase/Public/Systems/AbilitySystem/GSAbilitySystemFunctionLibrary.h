@@ -11,6 +11,7 @@
 #include "GSAbilitySystemFunctionLibrary.generated.h"
 
 
+class UGSLevelUpInfo;
 /**
  * 
  */
@@ -24,7 +25,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "GSAbilitySystemLibrary|WidgetController", meta=(DefaultToSelf="WorldContextObject"))
 	static UGSCharacterMenuWidgetController* GetCharacterMenuWidgetController(const UObject* WorldContextObject);
-
+	
 private:
 	template<typename T>
 	static T* GetWidgetControllerFromHUD(const UObject* WorldContextObject)

@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Dawid Szoldra. All rights reserved.
 
 
-#include "AbilitySystem/AttributeSets/GSAttributeSetBase.h"
+#include "Systems/AbilitySystem/AttributeSets/GSAttributeSetBase.h"
 #include "GameplayEffectExtension.h"
 
 UGSAttributeSetBase::UGSAttributeSetBase()

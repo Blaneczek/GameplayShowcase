@@ -31,9 +31,11 @@ UCLASS()
 class GAMEPLAYSHOWCASE_API UGSLevelUpInfo : public UDataAsset
 {
 	GENERATED_BODY()
+	
 public:
 	UPROPERTY(EditDefaultsOnly)
-	TArray<FLevelUpInfo> LevelUpInfo;
+	TArray<FLevelUpInfo> LevelUpInformation;
 
-	int32 FindLevelForXP(int32 XP);
+	int32 FindLevelForXP(int32 XP) const;
+	int32 FindMinXPForLevel(int32 Level) const;
 };

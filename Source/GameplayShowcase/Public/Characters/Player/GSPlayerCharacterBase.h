@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
-#include "AbilitySystem/Interfaces/GSAbilityCharacterHelper.h"
+#include "Systems/AbilitySystem/Interfaces/GSAbilityCharacterHelper.h"
 #include "GameFramework/Character.h"
 #include "GSPlayerCharacterBase.generated.h"
 
+class UGSLevelingComponent;
 struct FGameplayTag;
 struct FOnAttributeChangeData;
 class UGameplayAbility;
@@ -30,10 +31,10 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	
 	/* Getters */
-	UGSSpringArmComponent* GetCameraArm() const;
-	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-	
-	UAttributeSet* GetAttributeSet() const;
+	FORCEINLINE UGSSpringArmComponent* GetCameraArm() const;
+	FORCEINLINE virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;	
+	FORCEINLINE UAttributeSet* GetAttributeSet() const;
+	FORCEINLINE UGSLevelingComponent* GetLevelingComponent() const;
 
 	virtual void SetMovementSpeed(bool bSprint = true, float NewSpeed = 500.f) override;
 	
@@ -52,6 +53,9 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
 	TObjectPtr<UGSAttributeSetPlayer> AttributeSet;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	TObjectPtr<UGSLevelingComponent> LevelingComponent;
 
 	/*** Gameplay Effects ***/
 	

@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Dawid Szoldra. All rights reserved.
 
 
-#include "AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
+#include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 
 #include "GameplayEffectExtension.h"
 #include "GSGameplayTags.h"

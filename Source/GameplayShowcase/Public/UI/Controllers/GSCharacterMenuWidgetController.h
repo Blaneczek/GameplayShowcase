@@ -15,6 +15,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCurrentLevelXPChangedSignature, 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelChangedSignature, int32, NewLevel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributePointSignature, int32, NumOfAvailablePoints);
 
+using FAttributePair = TPair<FGameplayAttribute(*)(), FGameplayAttribute(*)()>;
+
 /**
  * 
  */
@@ -32,10 +34,10 @@ protected:
 	void SpendAttributePoint(const FGameplayTag& AttributeTag);
 	
 private:
-	void BroadcastAttributeInfo(const FGameplayTag& AttributeTag, const FGameplayAttribute& Attribute) const;
+	void BroadcastAttributeInfo(const FGameplayTag& AttributeTag, const FGameplayAttribute& Attribute, bool bIsMax = false) const;
 
 	/* New upgrade point after 25%, 50%, 75% */
-	void CheckIfNewUpgradePoint(float NewPercent);
+	void CheckIfNewUpgradePoint(float NewPercent, int32 NewLevelsNum);
 	
 public:
 	UPROPERTY(BlueprintAssignable, Category="GAS|Attributes")
@@ -61,7 +63,5 @@ private:
 	int32 Level = 1;
 	int32 LevelsDelta = 0;
 	float LevelPercent = 0.0f;
-
-
 	
 };

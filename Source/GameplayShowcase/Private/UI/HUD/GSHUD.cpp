@@ -5,6 +5,7 @@
 #include "Blueprint/UserWidget.h"
 #include "UI/Controllers/GSCharacterMenuWidgetController.h"
 #include "UI/Controllers/GSOverlayWidgetController.h"
+#include "UI/Controllers/GSInventoryMenuWidgetController.h"
 #include "UI/Widgets/GSWidgetBase.h"
 
 AGSHUD::AGSHUD()
@@ -13,26 +14,23 @@ AGSHUD::AGSHUD()
 
 UGSOverlayWidgetController* AGSHUD::GetOverlayWidgetController(const FWidgetControllerParams& WCParams)
 {
-	return CreateOrGetWidgetController<UGSOverlayWidgetController>(OverlayWidgetController, OverlayWidgetControllerClass, WCParams);
+	return CreateOrGetWidgetControllerByType<UGSOverlayWidgetController>(OverlayWidgetController, OverlayControllerClass, WCParams);
 }
 
 UGSCharacterMenuWidgetController* AGSHUD::GetCharacterMenuWidgetController(const FWidgetControllerParams& WCParams)
 {
-	return CreateOrGetWidgetController<UGSCharacterMenuWidgetController>(CharacterMenuWidgetController, CharacterMenuWidgetControllerClass, WCParams);
+	return CreateOrGetWidgetControllerByType<UGSCharacterMenuWidgetController>(CharacterMenuController, CharacterMenuControllerClass, WCParams);
 }
 
-void AGSHUD::OpenOrCloseCharacterMenu()
+UGSInventoryMenuWidgetController* AGSHUD::GetInventoryMenuWidgetController(const FWidgetControllerParams& WCParams)
 {
-	if (OverlayWidget)
-	{
-		IGSHUDHelper::Execute_OpenOrCloseCharacterMenu(OverlayWidget); 
-	}
+	return CreateOrGetWidgetControllerByType<UGSInventoryMenuWidgetController>(InventoryMenuController, InventoryMenuControllerClass, WCParams);
 }
 
 void AGSHUD::InitializeOverlayWidget(APlayerController* PC, ACharacter* PlayerChar,
                                      UAbilitySystemComponent* ASC, UAttributeSet* AS)
 {
-	if (!OverlayWidgetClass || !OverlayWidgetControllerClass)
+	if (!OverlayWidgetClass || !OverlayControllerClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("GSHUD::InitializeOverlayWidget | OverlayWidgetClass or OverlayWidgetControllerClass is not valid."));
 		return;

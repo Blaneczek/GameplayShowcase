@@ -21,7 +21,7 @@ public:
 	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
 	
-public:
+
 	/* VITAL ATTRIBUTES */
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")
     FGameplayAttributeData HP;
@@ -49,12 +49,20 @@ public:
 	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, PERegen);
 
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")
-	FGameplayAttributeData AttackDamage;
-	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, AttackDamage);
+	FGameplayAttributeData AttackDamageMin;
+	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, AttackDamageMin);
+	
+	UPROPERTY(BlueprintReadOnly, Category="Attributes")
+	FGameplayAttributeData AttackDamageMax;
+	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, AttackDamageMax);
 
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")
-	FGameplayAttributeData MagicDamage;
-	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, MagicDamage);
+	FGameplayAttributeData MagicDamageMin;
+	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, MagicDamageMin);
+
+	UPROPERTY(BlueprintReadOnly, Category="Attributes")
+	FGameplayAttributeData MagicDamageMax;
+	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, MagicDamageMax);
 
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")
 	FGameplayAttributeData Defence;

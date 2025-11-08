@@ -21,21 +21,22 @@ UGSLevelingComponent* UGSLevelingComponent::FindLevelingComponent(const AActor* 
 
 void UGSLevelingComponent::SetLevel(int32 NewLevel)
 {
+	const int32 NewLevelsNum = NewLevel - Level;
 	Level = FMath::Clamp(NewLevel, 1, LevelUpInfo->LevelUpInformation.Num());
 	OnLevelUpDelegate.Broadcast(Level);
 	
 	// Set min XP for given level
 	const int32 NewXP = LevelUpInfo->FindMinXPForLevel(Level);
-	if (AttributeSet.IsValid())
+	if (AttributeSet)
 	{
 		AttributeSet.Get()->SetXP(NewXP);
-		OnXPChangedDelegate.Broadcast(GetCurrentLevelInfo());
+		OnXPChangedDelegate.Broadcast(GetCurrentLevelInfo(), NewLevelsNum);
 	}
 }
 
 void UGSLevelingComponent::AddToXP(int32 InXP)
 {
-	if (AttributeSet.IsValid())
+	if (AttributeSet)
 	{
 		const int32 NewXP = AttributeSet.Get()->GetXP() + InXP;
 		const int32 NewLevel = LevelUpInfo->FindLevelForXP(NewXP);
@@ -47,7 +48,7 @@ void UGSLevelingComponent::AddToXP(int32 InXP)
 		AttributeSet.Get()->SetXP(NewXP);
 
 		// Each time we add xp, we update UI info so we need information about current level
-		OnXPChangedDelegate.Broadcast(GetCurrentLevelInfo());
+		OnXPChangedDelegate.Broadcast(GetCurrentLevelInfo(), NumLevelUps);
 	}
 }
 
@@ -65,7 +66,7 @@ int32 UGSLevelingComponent::GetLevel() const
 
 int32 UGSLevelingComponent::GetXP() const
 {
-	if (AttributeSet.IsValid())
+	if (AttributeSet)
 	{
 		return AttributeSet.Get()->GetXP();
 	}

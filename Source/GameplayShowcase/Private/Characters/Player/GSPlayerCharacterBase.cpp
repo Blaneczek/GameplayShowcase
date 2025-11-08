@@ -3,12 +3,14 @@
 #include "Public/Characters/Player/GSPlayerCharacterBase.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
-#include "GSGameplayTags.h"
 #include "Systems/AbilitySystem/GSAbilitySystemComponent.h"
 #include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Player/Camera/GSCameraComponent.h"
 #include "Player/Camera/GSSpringArmComponent.h"
+#include "Systems/AbilitySystem/GSGameplayTags.h"
+#include "Systems/Inventory/GSEquipmentComponent.h"
+#include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Leveling/GSLevelingComponent.h"
 
 
@@ -26,6 +28,8 @@ AGSPlayerCharacterBase::AGSPlayerCharacterBase()
 	AbilitySystemComponent = CreateDefaultSubobject<UGSAbilitySystemComponent>("AbilitySystemComponent");
 	AttributeSet = CreateDefaultSubobject<UGSAttributeSetPlayer>(TEXT("AttributeSet"));
 	LevelingComponent = CreateDefaultSubobject<UGSLevelingComponent>(TEXT("LevelingComponent"));
+	InventoryComponent = CreateDefaultSubobject<UGSInventoryComponent>(TEXT("InventoryComponent"));
+	EquipmentComponent = CreateDefaultSubobject<UGSEquipmentComponent>(TEXT("EquipmentComponent"));
 }
 
 void AGSPlayerCharacterBase::InitAbilityActorInfo()
@@ -132,6 +136,11 @@ UGSLevelingComponent* AGSPlayerCharacterBase::GetLevelingComponent() const
 	return LevelingComponent;
 }
 
+UGSInventoryComponent* AGSPlayerCharacterBase::GetInventoryComponent() const
+{
+	return InventoryComponent;
+}
+
 void AGSPlayerCharacterBase::SetMovementSpeed(bool bSprint, float NewSpeed)
 {
 	if (bSprint)
@@ -147,5 +156,10 @@ void AGSPlayerCharacterBase::SetMovementSpeed(bool bSprint, float NewSpeed)
 			GetWorldTimerManager().ClearTimer(IsMovingTimerHandle);
 		}
 	}
+}
+
+void AGSPlayerCharacterBase::PickUpItem()
+{
+	InventoryComponent->TryAddItem();
 }
 

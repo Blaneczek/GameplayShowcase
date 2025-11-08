@@ -1,0 +1,57 @@
+// Copyright (c) 2025 Dawid Szoldra. All rights reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "UI/Controllers/GSInventoryMenuWidgetController.h"
+#include "UI/Widgets/GSWidgetBase.h"
+#include "GSInventoryGrid.generated.h"
+
+struct FItemDefinition;
+class UGSGridItem;
+struct FGridPosition;
+class UUniformGridSlot;
+class UUniformGridPanel;
+class UGSGridSlot;
+
+/**
+ * 
+ */
+UCLASS()
+class GAMEPLAYSHOWCASE_API UGSInventoryGrid : public UGSWidgetBase
+{
+	GENERATED_BODY()
+	
+public:
+	void AddItem(const FItemDefinition& ItemDef, const TArray<FGridPosition>& Positions);
+
+	bool FindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
+	
+protected:
+	virtual void NativePreConstruct() override;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	TObjectPtr<UUniformGridPanel> GridPanel;
+	
+private:
+	UFUNCTION(BlueprintCallable)
+	void ConstructGrid();
+
+	void AssignItemToSlots(UGSGridItem* Item, const TArray<FGridPosition>& Positions);
+	
+	UPROPERTY()
+	TArray<UGSGridSlot*> GridSlots;
+
+	UPROPERTY()
+	TArray<UGSGridItem*> GridItems;
+	
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> GridSlotClass;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UGSGridItem> GridItemClass;
+	
+	UPROPERTY(EditAnywhere)
+	int32 Rows = 0;
+	UPROPERTY(EditAnywhere)
+	int32 Columns = 0;
+};

@@ -85,7 +85,7 @@ void UGSOverlayWidgetController::BindCallbacksToDependencies()
 
 	if (UGSLevelingComponent* LevelingComponent = UGSLevelingComponent::FindLevelingComponent(Character))
 	{
-		LevelingComponent->OnXPChangedDelegate.AddLambda([this](const FCurrentLevelInfo& Info) 
+		LevelingComponent->OnXPChangedDelegate.AddLambda([this](const FCurrentLevelInfo& Info, int32 NewLevelsNums) 
 		{
 			OnXPPercentChangedDelegate.Broadcast(Info.XPPercent);
 		});

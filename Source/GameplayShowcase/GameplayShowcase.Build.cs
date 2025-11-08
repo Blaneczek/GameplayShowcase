@@ -19,6 +19,7 @@ public class GameplayShowcase : ModuleRules
 			"GameplayStateTreeModule",
 			"UMG",
 			"Slate",
+			"SlateCore",
 			"GameplayTags",
             "GameplayTasks",
             "GameplayAbilities",

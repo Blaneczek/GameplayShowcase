@@ -2,7 +2,6 @@
 
 
 #include "Public/Player/GSPlayerController.h"
-
 #include "AbilitySystemBlueprintLibrary.h"
 #include "EnhancedInputSubsystems.h"
 #include "NiagaraFunctionLibrary.h"
@@ -11,7 +10,6 @@
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Input/GSInputComponent.h"
 #include "Player/Camera/GSSpringArmComponent.h"
-#include "UI/HUD/GSHUD.h"
 
 
 AGSPlayerController::AGSPlayerController()
@@ -50,6 +48,7 @@ void AGSPlayerController::SetupInputComponent()
 	{
 		// Movement
 		GSInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGSPlayerController::Move);
+		GSInputComponent->BindAction(MoveAction, ETriggerEvent::Started, this, &AGSPlayerController::StopOngoingMovement);
 		GSInputComponent->BindAction(AutoMoveAction, ETriggerEvent::Triggered, this, &AGSPlayerController::AutoMove);
 		GSInputComponent->BindAction(AutoMoveAction, ETriggerEvent::Completed, this, &AGSPlayerController::StopAutoMove);
 
@@ -65,8 +64,11 @@ void AGSPlayerController::SetupInputComponent()
 																		  &AGSPlayerController::AbilityInputTagReleased);
 
 		// Widgets
-		GSInputComponent->BindAction(CharacterMenuAction, ETriggerEvent::Started, this, &AGSPlayerController::OpenOrCloseCharacterMenu);
-		
+		GSInputComponent->BindAction(CharacterMenuAction, ETriggerEvent::Started, this, &AGSPlayerController::OpenOrCloseMenuByType<UGSCharacterMenuWidget>);
+		GSInputComponent->BindAction(InventoryMenuAction, ETriggerEvent::Started, this, &AGSPlayerController::OpenOrCloseMenuByType<UGSInventoryMenuWidget>);
+
+		//Others
+		GSInputComponent->BindAction(PickUpAction, ETriggerEvent::Started, this, &AGSPlayerController::PickUp);
 	}
 }
 
@@ -182,19 +184,19 @@ void AGSPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 	}
 }
 
+void AGSPlayerController::PickUp()
+{
+	if (CachedPlayerCharacter)
+	{
+		CachedPlayerCharacter->PickUpItem();
+	}
+}
+
 void AGSPlayerController::InitializeHUD()
 {
 	if (CachedHUD)
 	{
 		CachedHUD->InitializeOverlayWidget(this, CachedPlayerCharacter, CachedPlayerCharacter->GetAbilitySystemComponent(), CachedPlayerCharacter->GetAttributeSet());
-	}
-}
-
-void AGSPlayerController::OpenOrCloseCharacterMenu()
-{
-	if (CachedHUD)
-	{
-		CachedHUD->OpenOrCloseCharacterMenu();
 	}
 }
 

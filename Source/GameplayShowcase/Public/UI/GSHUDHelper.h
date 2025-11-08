@@ -24,4 +24,8 @@ class GAMEPLAYSHOWCASE_API IGSHUDHelper
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="GSHUD|Helper")
 	void OpenOrCloseCharacterMenu();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category="GSHUD|Helper")
+	void OpenOrCloseInventoryMenu();
+
 };

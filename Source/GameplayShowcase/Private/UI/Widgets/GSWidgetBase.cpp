@@ -8,3 +8,4 @@ void UGSWidgetBase::SetWidgetController(UObject* InWidgetController)
 	WidgetController = InWidgetController;
 	WidgetControllerSet();
 }
+

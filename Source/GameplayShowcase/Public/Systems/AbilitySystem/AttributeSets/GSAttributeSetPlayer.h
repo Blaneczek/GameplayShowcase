@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <functional>
 #include "CoreMinimal.h"
 #include "GSAttributeSetBase.h"
 #include "GSAttributeSetPlayer.generated.h"
+
+using FAttributePair = TPair<FGameplayAttribute(*)(), FGameplayAttribute(*)()>;
 
 /**
  * 
@@ -20,9 +21,9 @@ public:
 
 	virtual void PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const override;
 	virtual void PostGameplayEffectExecute(const struct FGameplayEffectModCallbackData& Data) override;
-	
-public:
-	TMap<FGameplayTag, FGameplayAttribute(*)()> TagsToAttributes;
+
+	TMap<FGameplayTag, FGameplayAttribute(*)()> TagsToSingleAttributes;
+	TMap<FGameplayTag, FAttributePair> TagsToPairAttributes;
 
 	/* VITAL ATTRIBUTES */
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")

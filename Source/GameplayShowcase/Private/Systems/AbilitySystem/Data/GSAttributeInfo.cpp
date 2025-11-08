@@ -3,13 +3,13 @@
 
 #include "Systems/AbilitySystem/Data/GSAttributeInfo.h"
 
-FAttributeInfo UGSAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound) const
+FAttributeInfo* UGSAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound)
 {
-	for (const auto& Info : AttributeInformation)
+	for (auto& Info : AttributeInformation)
 	{
 		if (Info.AttributeTag.MatchesTagExact(AttributeTag))
 		{
-			return Info;
+			return &Info;
 		}		
 	}
 
@@ -17,5 +17,5 @@ FAttributeInfo UGSAttributeInfo::FindAttributeInfoForTag(const FGameplayTag& Att
 	{
 		UE_LOG(LogTemp, Error, TEXT("Can't find Info for AttributeTag [%s] on AttributeInfo [%s]."), *AttributeTag.ToString(), *GetNameSafe(this));
 	}	
-	return FAttributeInfo();
+	return nullptr;
 }

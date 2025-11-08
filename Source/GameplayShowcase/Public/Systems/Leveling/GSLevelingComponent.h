@@ -18,8 +18,8 @@ struct FCurrentLevelInfo
 };
 
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelUpSignature, int32 /* NewLevel*/);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnXPChangedSignature, const FCurrentLevelInfo& /* CurrentLevelInfo */);
+DECLARE_MULTICAST_DELEGATE_OneParam(FLevelUpSignature, int32 /* NewLevel*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FXPChangedSignature, const FCurrentLevelInfo& /* CurrentLevelInfo */, int32 /* NewLevelsNum */);
 
 class UGSAttributeSetPlayer;
 class UGSLevelUpInfo;
@@ -57,15 +57,16 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UGSLevelUpInfo> LevelUpInfo;
 
-	FOnLevelUpSignature OnLevelUpDelegate;
+	FLevelUpSignature OnLevelUpDelegate;
 
-	FOnXPChangedSignature OnXPChangedDelegate;
+	FXPChangedSignature OnXPChangedDelegate;
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	int32 Level = 1;
 	
 private:
-	TWeakObjectPtr<UGSAttributeSetPlayer> AttributeSet;
+	UPROPERTY()
+	TObjectPtr<UGSAttributeSetPlayer> AttributeSet;
 };
 

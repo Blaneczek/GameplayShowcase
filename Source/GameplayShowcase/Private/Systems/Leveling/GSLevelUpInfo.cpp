@@ -9,7 +9,8 @@ int32 UGSLevelUpInfo::FindLevelForXP(int32 XP) const
 		return 1;
 	}
 
-	const int32 Index = Algo::UpperBoundBy(LevelUpInformation, XP, [](const auto& Info) { return Info.LevelUpRequirement; });
+	int32 Index = Algo::UpperBoundBy(LevelUpInformation, XP, [](const auto& Info) { return Info.LevelUpRequirement; });
+	Index = FMath::Clamp<int32>(Index, 0, LevelUpInformation.Num() - 1);
 	
 	return LevelUpInformation[Index].Level;
 }

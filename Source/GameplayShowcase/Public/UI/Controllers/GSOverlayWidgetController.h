@@ -8,7 +8,7 @@
 
 class UGSLevelingComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeChangedSignature, float, NewValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributeChangedSignature, float, NewValue);
 
 /**
  * 
@@ -22,27 +22,25 @@ public:
 	virtual void BroadcastInitialValues() override;
 	virtual void BindCallbacksToDependencies() override;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnHPChanged;
+	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
+	FAttributeChangedSignature OnHPChanged;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnMaxHPChanged;
+	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
+	FAttributeChangedSignature OnMaxHPChanged;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnPEChanged;
+	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
+	FAttributeChangedSignature OnPEChanged;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnMaxPEChanged;
+	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
+	FAttributeChangedSignature OnMaxPEChanged;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnSTChanged;
+	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
+	FAttributeChangedSignature OnSTChanged;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnMaxSTChanged;
+	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
+	FAttributeChangedSignature OnMaxSTChanged;
 
-	UPROPERTY(BlueprintAssignable, Category = "GAS|Attributes")
-	FOnAttributeChangedSignature OnXPPercentChangedDelegate;
+	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
+	FAttributeChangedSignature OnXPPercentChangedDelegate;
 
-private:
-	TWeakObjectPtr<UGSLevelingComponent> CachedLevelingComponent;
 };

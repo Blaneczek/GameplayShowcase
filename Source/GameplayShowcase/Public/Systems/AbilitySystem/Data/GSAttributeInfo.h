@@ -25,11 +25,12 @@ struct FAttributeInfo
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	FText AttributeDescription = FText();
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    bool bIsMaxAttribute = false;
-	
 	UPROPERTY(BlueprintReadOnly)
-	float AttributeValue = 0.f;	
+	float AttributeValue = 0.f;
+
+	/* Optional if there is an additional Attribute that specifies the maximum value, e.g. HP - MaxHP, AttackDamageMin - AttackDamageMax  */
+	UPROPERTY(BlueprintReadOnly)
+	float AttributeValueMax = 0.f;	
 };
 
 /**
@@ -41,7 +42,7 @@ class GAMEPLAYSHOWCASE_API UGSAttributeInfo : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	FAttributeInfo FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound = false) const;
+	FAttributeInfo* FindAttributeInfoForTag(const FGameplayTag& AttributeTag, bool bLogNotFound = false);
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TArray<FAttributeInfo> AttributeInformation;

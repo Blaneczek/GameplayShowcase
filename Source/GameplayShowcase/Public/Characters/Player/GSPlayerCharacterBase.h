@@ -8,6 +8,9 @@
 #include "GameFramework/Character.h"
 #include "GSPlayerCharacterBase.generated.h"
 
+class USphereComponent;
+class UGSEquipmentComponent;
+class UGSInventoryComponent;
 class UGSLevelingComponent;
 struct FGameplayTag;
 struct FOnAttributeChangeData;
@@ -35,13 +38,15 @@ public:
 	FORCEINLINE virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;	
 	FORCEINLINE UAttributeSet* GetAttributeSet() const;
 	FORCEINLINE UGSLevelingComponent* GetLevelingComponent() const;
-
+	FORCEINLINE UGSInventoryComponent* GetInventoryComponent() const;
+	
 	virtual void SetMovementSpeed(bool bSprint = true, float NewSpeed = 500.f) override;
+
+	void PickUpItem();
 	
 protected:
 	virtual void BeginPlay() override;
 
-protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="Camera")
 	TObjectPtr<UGSCameraComponent> Camera;
 	
@@ -56,6 +61,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
 	TObjectPtr<UGSLevelingComponent> LevelingComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	TObjectPtr<UGSInventoryComponent> InventoryComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	TObjectPtr<UGSEquipmentComponent> EquipmentComponent;
 
 	/*** Gameplay Effects ***/
 	
@@ -74,7 +85,6 @@ protected:
 	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
 
 	
-	
 private:
 	void InitializeAttributes();
 	void AddAbilities(const TArray<TSubclassOf<UGameplayAbility>>& Abilities);
@@ -82,14 +92,13 @@ private:
 	void ApplySimpleGameplayEffectToSelf(TSubclassOf<UGameplayEffect> EffectClass, float Level);
 	
 	void CheckIfCharacterIsMoving();
-
+	
 	void OnStaminaConsumingTagChanged(const FGameplayTag Tag, int32 NewCount);
 	
-private:
+
 	float DefaultMovementSpeed;
 
 	FTimerHandle IsMovingTimerHandle;
 	FTimerHandle StaminaRegenTimerHandle;
 
-	
 };

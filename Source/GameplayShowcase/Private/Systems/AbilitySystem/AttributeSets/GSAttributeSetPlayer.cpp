@@ -4,36 +4,35 @@
 #include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 
 #include "GameplayEffectExtension.h"
-#include "GSGameplayTags.h"
+#include "Systems/AbilitySystem/GSGameplayTags.h"
 
 UGSAttributeSetPlayer::UGSAttributeSetPlayer()
 {
-	/* Vital Attributes */
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_HP.GetTag(), GetHPAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_PE.GetTag(), GetPEAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_ST.GetTag(), GetSTAttribute);
+
+	TagsToPairAttributes.Add(GSGameplayTags::Attributes::Primary_HP.GetTag(), {GetHPAttribute, GetMaxHPAttribute});
+	TagsToPairAttributes.Add(GSGameplayTags::Attributes::Primary_PE.GetTag(), {GetPEAttribute, GetMaxPEAttribute});
+	TagsToPairAttributes.Add(GSGameplayTags::Attributes::Primary_ST.GetTag(), {GetSTAttribute, GetMaxSTAttribute});
+
+	TagsToPairAttributes.Add(GSGameplayTags::Attributes::Primary_AttackDamage.GetTag(), {GetAttackDamageMinAttribute, GetAttackDamageMaxAttribute});
+	TagsToPairAttributes.Add(GSGameplayTags::Attributes::Primary_MagicDamage.GetTag(), {GetMagicDamageMinAttribute, GetMagicDamageMaxAttribute});
 	
 	/* Character Attributes */
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Character_VIT.GetTag(), GetVITAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Character_INT.GetTag(), GetINTAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Character_STR.GetTag(), GetSTRAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Character_DEX.GetTag(), GetDEXAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Character_VIT.GetTag(), GetVITAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Character_INT.GetTag(), GetINTAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Character_STR.GetTag(), GetSTRAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Character_DEX.GetTag(), GetDEXAttribute);
 
 	/* Primary Attributes */
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_MaxHP.GetTag(), GetMaxHPAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_HPRegen.GetTag(), GetHPRegenAttribute);	
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_MaxPE.GetTag(), GetMaxPEAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_PERegen.GetTag(), GetPERegenAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_MaxST.GetTag(), GetMaxSTAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_STRegen.GetTag(), GetSTRegenAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_AttackDamage.GetTag(), GetAttackDamageAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_MagicDamage.GetTag(), GetMagicDamageAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_Defence.GetTag(), GetDefenceAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_MagicDefence.GetTag(), GetMagicDefenceAttribute);
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Primary_Evading.GetTag(), GetEvadingAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Primary_HPRegen.GetTag(), GetHPRegenAttribute);	
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Primary_PERegen.GetTag(), GetPERegenAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Primary_STRegen.GetTag(), GetSTRegenAttribute);
+	
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Primary_Defence.GetTag(), GetDefenceAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Primary_MagicDefence.GetTag(), GetMagicDefenceAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Primary_Evading.GetTag(), GetEvadingAttribute);
 
 	/* Others Attributes */
-	TagsToAttributes.Add(GSGameplayTags::Attribute_Others_XP.GetTag(), GetXPAttribute);
+	TagsToSingleAttributes.Add(GSGameplayTags::Attributes::Others_XP.GetTag(), GetXPAttribute);
 }
 
 void UGSAttributeSetPlayer::PreAttributeBaseChange(const FGameplayAttribute& Attribute, float& NewValue) const

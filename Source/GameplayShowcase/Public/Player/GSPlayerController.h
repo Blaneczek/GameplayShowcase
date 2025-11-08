@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "UI/HUD/GSHUD.h"
 #include "GSPlayerController.generated.h"
 
 class AGSHUD;
@@ -42,30 +43,9 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	virtual void OnPossess(APawn* aPawn) override;
-	
-private:
-	void Move(const FInputActionValue& Value);
-	void StopOngoingMovement();
-	void AutoMove();
-	void StopAutoMove();
-	
-	void Look(const FInputActionValue& Value);
-	void EnableLook(const FInputActionValue& Value);
-	void CameraZoom(const FInputActionValue& Value);
-	
-	void AbilityInputTagPressed(FGameplayTag InputTag);
-	void AbilityInputTagReleased(FGameplayTag InputTag);
-	void AbilityInputTagHeld(FGameplayTag InputTag);
 
-	/** UI **/
-	void InitializeHUD();
-	void OpenOrCloseCharacterMenu();
-	
-	UGSAbilitySystemComponent* GetASC();
-	
-protected:
 	UPROPERTY(EditAnywhere, Category ="Input")
-    TObjectPtr<UInputMappingContext> GSContext;
+	TObjectPtr<UInputMappingContext> GSContext;
 
 	UPROPERTY(EditAnywhere, Category ="Input|Action")
 	TObjectPtr<UInputAction> MoveAction;
@@ -79,6 +59,10 @@ protected:
 	TObjectPtr<UInputAction> CameraZoomAction;
 	UPROPERTY(EditAnywhere, Category ="Input|Action")
 	TObjectPtr<UInputAction> CharacterMenuAction;
+	UPROPERTY(EditAnywhere, Category ="Input|Action")
+	TObjectPtr<UInputAction> InventoryMenuAction;
+	UPROPERTY(EditAnywhere, Category ="Input|Action")
+	TObjectPtr<UInputAction> PickUpAction;
 	
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UGSInputConfig> InputConfig;
@@ -99,8 +83,32 @@ protected:
 	TMap<EGameplayCursorType, TEnumAsByte<EMouseCursor::Type>> MouseCursors;
 	UPROPERTY(EditAnywhere, Category="Cursor")
 	TObjectPtr<UNiagaraSystem> CursorHitEffect;
+	
+private:
+	void Move(const FInputActionValue& Value);
+	void StopOngoingMovement();
+	void AutoMove();
+	void StopAutoMove();
+	
+	void Look(const FInputActionValue& Value);
+	void EnableLook(const FInputActionValue& Value);
+	void CameraZoom(const FInputActionValue& Value);
+	
+	void AbilityInputTagPressed(FGameplayTag InputTag);
+	void AbilityInputTagReleased(FGameplayTag InputTag);
+	void AbilityInputTagHeld(FGameplayTag InputTag);
 
-private:	
+	void PickUp();
+	
+	/** UI **/
+	void InitializeHUD();
+	
+	template <typename T> requires std::is_base_of_v<UGSWidgetBase, T>
+	void OpenOrCloseMenuByType();
+	/*******/
+	
+	UGSAbilitySystemComponent* GetASC();
+		
 	UPROPERTY()
 	TObjectPtr<AGSPlayerCharacterBase> CachedPlayerCharacter;
 	
@@ -112,3 +120,12 @@ private:
 	
 	bool bCanLook = false;
 };
+
+template <typename T> requires std::is_base_of_v<UGSWidgetBase, T>
+void AGSPlayerController::OpenOrCloseMenuByType()
+{
+	if (CachedHUD)
+	{
+		CachedHUD->OpenOrCloseMenuByType<T>();
+	}
+}

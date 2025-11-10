@@ -10,8 +10,8 @@
 
 class UBorder;
 
-DECLARE_DELEGATE_RetVal_TwoParams(TArray<FGridPosition>, FCheckAllItemPositionsSignature, const FGridPosition& Position, const FItemSize& inProxySize);
-DECLARE_DELEGATE_OneParam(FClearAllItemPositionsSignature, const TArray<FGridPosition>& Positions);
+DECLARE_DELEGATE_TwoParams(FCheckAllItemPositionsSignature, const FGridPosition& Position, const FItemSize& inProxySize);
+DECLARE_DELEGATE(FClearAllItemPositionsSignature);
 
 /**
  * 
@@ -21,12 +21,9 @@ class GAMEPLAYSHOWCASE_API UGSGridSlot : public UUserWidget
 {
 	GENERATED_BODY()
 
-public:
-	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
-	
+public:	
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE void SetOccupiedStatus(bool bIsOccupied);	
+	FORCEINLINE void SetOccupancyStatus(bool bIsOccupied);	
 	FORCEINLINE bool IsOccupied() const { return bOccupied; };
 
 	FORCEINLINE FGridPosition GetPosition() const { return Position; }; 
@@ -44,6 +41,9 @@ public:
 	
 protected:
 	virtual void NativeConstruct() override;
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	
 	UPROPERTY(EditAnywhere)
 	FLinearColor DefaultColor = FLinearColor::Black;
@@ -60,7 +60,9 @@ private:
 	
 	FGridPosition Position;
 	FItemSize ProxySize;
+	int32 InventoryGridIndex = 0;
 	
 	bool bOccupied = false;
 	bool bItemProxyExists = false;
+	bool bRelocationAllowed = false;
 };

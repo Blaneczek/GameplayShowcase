@@ -4,13 +4,15 @@
 #include "UI/Widgets/Inventory/GSGridItem.h"
 
 #include "Components/CanvasPanel.h"
+#include "Components/Image.h"
 #include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
 #include "Systems/Inventory/Items/Data/GSItemDefinition.h"
 #include "UI/Controllers/GSOverlayWidgetController.h"
 #include "UI/Widgets/Inventory/GSGridItemProxy.h"
 
-void UGSGridItem::ConstructItem(const FItemDefinition& Def, float inSlotSize)
+void UGSGridItem::ConstructItem(const FItemDefinition& Def, float inSlotSize, const TArray<FGridPosition>& Positions)
 {
+	GridPositions = Positions;
 	SlotSize = inSlotSize;
 	SetItemSize(Def);
 	SetItemImage(Def);
@@ -39,13 +41,16 @@ void UGSGridItem::SetItemSize(const FItemDefinition& Def)
 
 void UGSGridItem::SetItemImage(const FItemDefinition& Def)
 {
-	if (const FImageFragment* ImageFrag = Def.GetFragmentByType<FImageFragment>())
+	const FImageFragment* ImageFrag = Def.GetFragmentByType<FImageFragment>();
+	if (ImageFrag && ImageFrag->GetIcon())
 	{
-		ItemImage = ImageFrag->GetImage();
+		ItemIcon->SetBrushFromTexture(ImageFrag->GetIcon(), false);
+		return;
 	}
-	else
+	
+	if (AltIcon)
 	{
-		ItemImage = AltImage;
+		ItemIcon->SetBrushFromTexture(AltIcon, false);
 	}
 }
 
@@ -63,11 +68,13 @@ void UGSGridItem::CreateItemProxy()
 		{
 			UCanvasPanelSlot* ProxySlot = Controller->CanvasRef->AddChildToCanvas(ItemProxy);
 			const FVector2D WidgetSize = FVector2D(SlotSize * ItemSize.ColumnSize, SlotSize * ItemSize.RowSize);
-			ItemProxy->InitProxy(ProxySlot, Controller->CanvasRef, WidgetSize, ItemSize);
+			UTexture2D* Icon = Cast<UTexture2D>(ItemIcon->GetBrush().GetResourceObject());
+			ItemProxy->InitProxy(Icon,this, ProxySlot, Controller->CanvasRef, WidgetSize, ItemSize);
 
 			if (UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
 			{
 				InvController->CallOnGridItemProxyStatusChanged(true, ItemSize);
+				InvController->SetProxyGridItem(this);
 			}
 		}
 	}

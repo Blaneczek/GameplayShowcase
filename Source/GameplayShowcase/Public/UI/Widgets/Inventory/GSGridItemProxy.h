@@ -7,6 +7,7 @@
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
 #include "GSGridItemProxy.generated.h"
 
+class UGSGridItem;
 class UCanvasPanel;
 class UCanvasPanelSlot;
 class UGSDragWidget;
@@ -19,21 +20,23 @@ class GAMEPLAYSHOWCASE_API UGSGridItemProxy : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void InitProxy(UCanvasPanelSlot* inSlot, TWeakObjectPtr<UCanvasPanel> Canvas, const FVector2D& inWidgetSize, const FItemSize& inProxySize);
+	void InitProxy(UTexture2D* ItemIcon, UGSGridItem* GridItem, UCanvasPanelSlot* inSlot, TWeakObjectPtr<UCanvasPanel> Canvas, const FVector2D& inWidgetSize, const FItemSize& inProxySize);
 	void StartDragging();
-
+	bool RemoveProxy();
+	
 protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float DeltaTime) override;
 	virtual void NativeDestruct() override;
-	
+
 private:
-	bool HandleProxyAction();
-	bool RemoveProxy();
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UImage> ItemProxyIcon;
 	
 	UPROPERTY()
 	TObjectPtr<UCanvasPanelSlot> CanvasSlot;
 
 	TWeakObjectPtr<UCanvasPanel> CanvasPanel;
+	TWeakObjectPtr<UGSGridItem> GridItemRef;
 
 	bool bIsDragging = false;
 	FVector2D CanvasSize;

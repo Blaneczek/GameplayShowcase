@@ -12,8 +12,9 @@ void UGSInventoryMenuWidget::NativeConstruct()
 	InventoryController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this);
 	if (InventoryController)
 	{
-		InventoryController->CreateNewItemDelegate.AddUObject(this, &UGSInventoryMenuWidget::AddItem);
+		InventoryController->CreateNewItemDelegate.BindUObject(this, &UGSInventoryMenuWidget::AddItem);
 		InventoryController->FindNewSpaceDelegate.BindUObject(this, &UGSInventoryMenuWidget::FindFreeSpaceForItem);
+		InventoryController->RelocateGridItemDelegate.BindUObject(this, &UGSInventoryMenuWidget::RelocateGridItem);
 	}
 }
 
@@ -52,5 +53,16 @@ void UGSInventoryMenuWidget::AddItem(const FItemDefinition& ItemDef, const FGrid
 	if (UGSInventoryGrid* Grid = InventoryGrids[GridInfo.GridIndex])
 	{
 		Grid->AddItem(ItemDef, GridInfo.Positions);
+	}
+}
+
+void UGSInventoryMenuWidget::RelocateGridItem(int32 GridIndex, UGSGridItem* GridItem)
+{
+	if (InventoryGrids.Contains(GridIndex))
+	{
+		 if (UGSInventoryGrid* Grid = InventoryGrids[GridIndex])
+		 {
+			 Grid->RelocateGridItem(GridItem);
+		 }
 	}
 }

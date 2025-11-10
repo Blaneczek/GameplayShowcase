@@ -18,14 +18,13 @@ class GAMEPLAYSHOWCASE_API UGSDragWidget : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-
 	UFUNCTION(BlueprintCallable)
 	void SetMainWidgetRef(UUserWidget* inWidget);
 
 protected:
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+    virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeConstruct() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

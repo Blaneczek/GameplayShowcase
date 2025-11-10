@@ -49,6 +49,7 @@ void AGSPlayerController::SetupInputComponent()
 		// Movement
 		GSInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AGSPlayerController::Move);
 		GSInputComponent->BindAction(MoveAction, ETriggerEvent::Started, this, &AGSPlayerController::StopOngoingMovement);
+		GSInputComponent->BindAction(MoveAction, ETriggerEvent::Completed, this, &AGSPlayerController::WSADMovementEnded);
 		GSInputComponent->BindAction(AutoMoveAction, ETriggerEvent::Triggered, this, &AGSPlayerController::AutoMove);
 		GSInputComponent->BindAction(AutoMoveAction, ETriggerEvent::Completed, this, &AGSPlayerController::StopAutoMove);
 
@@ -103,13 +104,18 @@ void AGSPlayerController::StopOngoingMovement()
 {
 	if (CachedPlayerCharacter)
 	{
+		bWSADMovement = true;
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, CachedPlayerCharacter->GetActorLocation());
 	}	
 }
 
 void AGSPlayerController::AutoMove()
 {
-	// If GridItemProxy is created
+	if (bWSADMovement)
+	{
+		return;
+	}
+	// If GridItemProxy exists
 	if (OnLeftMouseButtonDown.IsBound())
 	{
 		return;
@@ -117,7 +123,6 @@ void AGSPlayerController::AutoMove()
 	
 	FHitResult CursorHit;
 	GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
-
 	if (CursorHit.bBlockingHit && CachedPlayerCharacter)
 	{
 		const FVector PlayerLocation = CachedPlayerCharacter->GetActorLocation();
@@ -132,6 +137,10 @@ void AGSPlayerController::AutoMove()
 
 void AGSPlayerController::StopAutoMove()
 {
+	if (bWSADMovement)
+	{
+		return;
+	}	
 	if (OnLeftMouseButtonDown.IsBound() && OnLeftMouseButtonDown.Execute())
 	{
 		return;
@@ -144,6 +153,11 @@ void AGSPlayerController::StopAutoMove()
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, CursorHitEffect, CursorHit.Location);
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, CursorHit.Location);
 	}
+}
+
+void AGSPlayerController::WSADMovementEnded()
+{
+	bWSADMovement = false;
 }
 
 void AGSPlayerController::Look(const FInputActionValue& Value)
@@ -170,11 +184,10 @@ void AGSPlayerController::EnableLook(const FInputActionValue& Value)
 }
 
 void AGSPlayerController::CameraZoom(const FInputActionValue& Value)
-{
-	const float ZoomValue = Value.Get<float>();
-
+{	
 	if (CachedPlayerCharacter)
 	{
+		const float ZoomValue = Value.Get<float>();
 		CachedPlayerCharacter->GetCameraArm()->AddZoomInput(ZoomValue * CameraZoomSpeed);
 	}
 }
@@ -221,7 +234,6 @@ UGSAbilitySystemComponent* AGSPlayerController::GetASC()
 	if (!AbilitySystemComponent)
 	{
 		AbilitySystemComponent = Cast<UGSAbilitySystemComponent>(UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPawn()));
-	}
-	
+	}	
 	return AbilitySystemComponent;
 }

@@ -93,6 +93,7 @@ private:
 	void StopOngoingMovement();
 	void AutoMove();
 	void StopAutoMove();
+	void WSADMovementEnded();
 	
 	void Look(const FInputActionValue& Value);
 	void EnableLook(const FInputActionValue& Value);
@@ -123,6 +124,7 @@ private:
 	TObjectPtr<UGSAbilitySystemComponent> AbilitySystemComponent;
 	
 	bool bCanLook = false;
+	bool bWSADMovement = false;
 };
 
 template <typename T> requires std::is_base_of_v<UGSWidgetBase, T>

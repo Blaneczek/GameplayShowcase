@@ -35,6 +35,7 @@ protected:
 	
 private:
 	void AddItem(const FItemDefinition& ItemDef, const FGridInfo& GridInfo);
+	void RelocateGridItem(int32 GridIndex, UGSGridItem* GridItem);
 	
 	UPROPERTY()
 	TMap<int32, UGSInventoryGrid*> InventoryGrids;

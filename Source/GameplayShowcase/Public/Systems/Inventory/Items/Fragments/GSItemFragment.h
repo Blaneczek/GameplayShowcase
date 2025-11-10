@@ -75,6 +75,14 @@ private:
 };
 /**********************/
 
+USTRUCT(BlueprintType)
+struct FWidgetFragment : public FItemFragment
+{
+	GENERATED_BODY()
+
+	virtual void AdaptToWidget() {};
+};
+
 
 /**********************/
 USTRUCT(BlueprintType)
@@ -116,11 +124,11 @@ struct FImageFragment : public FItemFragment
 {
 	GENERATED_BODY()
 
-	FORCEINLINE UImage* GetImage() const { return Image; }
+	FORCEINLINE UTexture2D* GetIcon() const { return Icon; }
 	
 private:
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UImage> Image = nullptr;
+	TObjectPtr<UTexture2D> Icon = nullptr;
 };
 /**********************/
 
@@ -129,7 +137,7 @@ private:
 class AGSPlayerCharacterBase;
 class AGSEquipItemActor;
 USTRUCT(BlueprintType)
-struct FEquipModifier : public FItemFragment
+struct FEquipModifier : public FWidgetFragment
 {
 	GENERATED_BODY()
 
@@ -158,6 +166,7 @@ struct FDamageModifier : public FEquipModifier
 {
 	GENERATED_BODY()
 
+	virtual void AdaptToWidget() override;
 	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
 	virtual void OnUnequip(AGSPlayerCharacterBase* OwningChar) override;
 

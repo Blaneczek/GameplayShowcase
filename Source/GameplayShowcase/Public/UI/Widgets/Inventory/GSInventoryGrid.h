@@ -26,9 +26,10 @@ class GAMEPLAYSHOWCASE_API UGSInventoryGrid : public UGSWidgetBase
 	
 public:
 	void AddItem(const FItemDefinition& ItemDef, const TArray<FGridPosition>& Positions);
-
 	bool FindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
 
+	void RelocateGridItem(UGSGridItem* GridItem);
+	
 protected:
 	virtual void NativePreConstruct() override;
 
@@ -39,17 +40,20 @@ private:
 	UFUNCTION(BlueprintCallable)
 	void ConstructGrid();
 
-	void AssignItemToSlots(UGSGridItem* Item, const TArray<FGridPosition>& Positions);
+	void SetSlotsOccupancy(const TArray<FGridPosition>& Positions, bool bOccupied);
 	bool CheckAllPositions(int32 RowIndex, int32 ColumnIndex, const FItemSize& ItemSize, TArray<FGridPosition>& Positions);
 	UGSGridSlot* GetGridSlotAtPosition(int32 RowIndex, int32 ColumnIndex);
 
-	TArray<FGridPosition> CheckRelocationPositions(const FGridPosition& Position, const FItemSize& ProxySize);
-	void ClearRelocationPositions(const TArray<FGridPosition>& Positions);
+	void CheckProxyPositions(const FGridPosition& Position, const FItemSize& ProxySize);
+	void ClearProxyPositions();
+	FGridPosition GetFirstGridPosition(const TArray<FGridPosition>& Positions);
 	
 	UPROPERTY()
 	TArray<UGSGridSlot*> GridSlots;
 	UPROPERTY()
 	TArray<UGSGridItem*> GridItems;
+
+	TArray<FGridPosition> ProxyPositions;
 	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> GridSlotClass;

@@ -9,6 +9,11 @@
 #include "Systems/Inventory/Items/GSEquipItemActor.h"
 #include "Systems/Inventory/Items/Fragments/GSFragmentTags.h"
 
+void FDamageModifier::AdaptToWidget()
+{
+	FEquipModifier::AdaptToWidget();
+}
+
 void FDamageModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
 {
 	if (!OwningChar)

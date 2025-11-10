@@ -7,6 +7,8 @@
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "GSInventoryMenuWidgetController.generated.h"
 
+class UGSGridItemProxy;
+class UGSGridItem;
 struct FItemSize;
 
 struct FGridInfo
@@ -20,9 +22,10 @@ struct FGridInfo
 	TArray<FGridPosition> Positions;
 };
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FCreateNewItemSignature, const FItemDefinition& ItemDef, const FGridInfo& GridInfo);
+DECLARE_DELEGATE_TwoParams(FCreateNewItemSignature, const FItemDefinition& ItemDef, const FGridInfo& GridInfo);
 DECLARE_DELEGATE_RetVal_TwoParams(bool, FFindNewSpaceDelegate, const FItemSize& /*ItemSize*/, FGridInfo& /*OutGridInfo*/);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FItemProxyStatusChangedSignature, bool bProxyExists, const FItemSize& ProxySize);
+DECLARE_DELEGATE_TwoParams(FRelocateGridItemSignature, int32 GridIndex, UGSGridItem* GridItem);
 
 
 /**
@@ -39,11 +42,15 @@ public:
 	
 	bool FindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
 	void CallOnGridItemProxyStatusChanged(bool bProxyExists, const FItemSize& ProxySize);
+	void TryRelocateItemGrid(int32 GridIndex);
+	void SetProxyGridItem(UGSGridItem* GridItem);
 	
 	FCreateNewItemSignature CreateNewItemDelegate;
 	FFindNewSpaceDelegate FindNewSpaceDelegate;
 	FItemProxyStatusChangedSignature OnItemProxyStatusChanged;
+	FRelocateGridItemSignature RelocateGridItemDelegate;
 	
 private:
 	TWeakObjectPtr<UGSInventoryComponent> InventoryComponent;
+	TWeakObjectPtr<UGSGridItem> GridItemRef;
 };

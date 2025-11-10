@@ -7,13 +7,21 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/Image.h"
 #include "Player/GSPlayerController.h"
 #include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
+#include "UI/Widgets/Inventory/GSGridItem.h"
 
 
-void UGSGridItemProxy::InitProxy(UCanvasPanelSlot* inSlot, TWeakObjectPtr<UCanvasPanel> Canvas, const FVector2D& inWidgetSize, const FItemSize& inProxySize)
+void UGSGridItemProxy::InitProxy(UTexture2D* ItemIcon, UGSGridItem* GridItem, UCanvasPanelSlot* inSlot, TWeakObjectPtr<UCanvasPanel> Canvas, const FVector2D& inWidgetSize, const FItemSize& inProxySize)
 {
+	if (ItemIcon)
+	{
+		ItemProxyIcon->SetBrushFromTexture(ItemIcon);
+	}
+	
+	GridItemRef = GridItem;
 	WidgetSize = inWidgetSize;
 	ProxySize = inProxySize;
 	CanvasSlot = inSlot;
@@ -24,7 +32,7 @@ void UGSGridItemProxy::InitProxy(UCanvasPanelSlot* inSlot, TWeakObjectPtr<UCanva
 
 	if (AGSPlayerController* PlayerController = Cast<AGSPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
-		PlayerController->OnLeftMouseButtonDown.BindUObject(this, &UGSGridItemProxy::HandleProxyAction);
+		PlayerController->OnLeftMouseButtonDown.BindUObject(this, &UGSGridItemProxy::RemoveProxy);
 		PlayerController->OnRightMouseButtonDown.BindUObject(this, &UGSGridItemProxy::RemoveProxy);
 	}
 }
@@ -38,6 +46,7 @@ void UGSGridItemProxy::StartDragging()
 	
 	CanvasSize = CanvasPanel.Get()->GetCachedGeometry().GetLocalSize();
 	CanvasSlot->SetSize(WidgetSize);
+	CanvasSlot->SetZOrder(100);
 	CanvasSlot->SetPosition(UWidgetLayoutLibrary::GetMousePositionOnViewport(this) - (WidgetSize * 0.5f));
 
 	bIsDragging = true;	
@@ -78,19 +87,6 @@ bool UGSGridItemProxy::RemoveProxy()
 	bIsDragging = false;
 	RemoveFromParent();
 	
-	return true;
-}
-
-bool UGSGridItemProxy::HandleProxyAction()
-{
-	if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
-	{
-		Controller->CallOnGridItemProxyStatusChanged(false, ProxySize);	
-	}
-	bIsDragging = false;
-	// TODO: Move GridItem
-	RemoveFromParent();
-
 	return true;
 }
 

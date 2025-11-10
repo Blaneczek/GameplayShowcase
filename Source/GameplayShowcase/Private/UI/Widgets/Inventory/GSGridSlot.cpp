@@ -10,7 +10,7 @@ void UGSGridSlot::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointer
 {
 	if (bItemProxyExists && GridSlot && CheckAllItemPositionsDelegate.IsBound())
 	{
-		PositionsToClear = CheckAllItemPositionsDelegate.Execute(Position, ProxySize);
+		CheckAllItemPositionsDelegate.Execute(Position, ProxySize);
 	}
 }
 
@@ -18,11 +18,24 @@ void UGSGridSlot::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
 	if (bItemProxyExists)
 	{
-		ClearAllItemsPositionsDelegate.ExecuteIfBound(PositionsToClear);
+		ClearAllItemsPositionsDelegate.ExecuteIfBound();
 	}	
 }
 
-void UGSGridSlot::SetOccupiedStatus(bool bIsOccupied)
+FReply UGSGridSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (bItemProxyExists && bRelocationAllowed && InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	{
+		if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+		{
+			Controller->TryRelocateItemGrid(InventoryGridIndex);
+		}
+		return FReply::Handled();
+	}
+	return FReply::Unhandled();
+}
+
+void UGSGridSlot::SetOccupancyStatus(bool bIsOccupied)
 {
 	bOccupied = bIsOccupied;
 }
@@ -42,6 +55,7 @@ void UGSGridSlot::SetHoveredColor(bool bCanRelocateItem)
 {
 	if (GridSlot)
 	{
+		bRelocationAllowed = bCanRelocateItem;
 		bCanRelocateItem ? GridSlot->SetBrushColor(RelocationAllowedColor) : GridSlot->SetBrushColor(RelocationForbiddenColor);
 	}
 }

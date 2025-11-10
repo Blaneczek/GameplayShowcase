@@ -23,6 +23,8 @@ struct FGridPosition
 	FGridPosition(int32 Rows, int32 Columns)
 		: RowsIndex(Rows), ColumnsIndex(Columns) {}
 
+	auto operator<=>(const FGridPosition& Other) const = default;
+	
 	UPROPERTY(EditAnywhere)
 	int32 RowsIndex = 0;
 	UPROPERTY(EditAnywhere)

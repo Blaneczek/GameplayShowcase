@@ -109,6 +109,12 @@ void AGSPlayerController::StopOngoingMovement()
 
 void AGSPlayerController::AutoMove()
 {
+	// If GridItemProxy is created
+	if (OnLeftMouseButtonDown.IsBound())
+	{
+		return;
+	}
+	
 	FHitResult CursorHit;
 	GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
 
@@ -125,7 +131,12 @@ void AGSPlayerController::AutoMove()
 }
 
 void AGSPlayerController::StopAutoMove()
-{	
+{
+	if (OnLeftMouseButtonDown.IsBound() && OnLeftMouseButtonDown.Execute())
+	{
+		return;
+	}
+	
 	FHitResult CursorHit;
 	GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
 	if (CursorHit.bBlockingHit && CursorHitEffect)
@@ -149,6 +160,11 @@ void AGSPlayerController::Look(const FInputActionValue& Value)
 
 void AGSPlayerController::EnableLook(const FInputActionValue& Value)
 {
+	if (OnRightMouseButtonDown.IsBound() && OnRightMouseButtonDown.Execute())
+	{
+		return;
+	}
+	
 	bCanLook = Value.Get<bool>();
 	bCanLook ? CurrentMouseCursor = MouseCursors[EGameplayCursorType::CameraLook] : CurrentMouseCursor = MouseCursors[EGameplayCursorType::Default];	
 }

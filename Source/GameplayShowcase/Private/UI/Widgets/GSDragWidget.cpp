@@ -7,41 +7,46 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
+#include "UI/Controllers/GSOverlayWidgetController.h"
 
 
 FReply UGSDragWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (MainWidgetSlot.IsValid() && InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	if (MainWidgetSlot && OriginalParentPanelRef.IsValid() && InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
-		CacheCanvasPropertiesIfNeeded();
+		CachePropertiesIfNeeded();
 
-		// Set to 1 to hover other widgets when moving
-		MainWidgetSlot->SetZOrder(1);
+		// Calculate local to main canvas offset 
+		const FGeometry& LocalCanvasGeo = OriginalParentPanelRef.Get()->GetCachedGeometry();	
+		LocalToMainOffset = CanvasGeometry.AbsoluteToLocal(LocalCanvasGeo.LocalToAbsolute(FVector2D(0.f, 0.f)));	
+		FixedCanvasSize = CanvasSize - LocalToMainOffset;
+		
+		// Hover other widgets when moving
+		MainWidgetSlot->SetZOrder(10);
 		bIsDragging = true;
 
 		// Offset between widget position and mouse position
-		const FVector2D MousePosition = CanvasGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
+		const FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
 		const FVector2D WidgetPosition = MainWidgetSlot->GetPosition();
 		DragOffset = MousePosition - WidgetPosition;
 		
-		if (const TSharedPtr<SWidget> CachedWidget = GetCachedWidget())
-		{
-			return FReply::Handled().UseHighPrecisionMouseMovement(CachedWidget.ToSharedRef());
-		}
+		return FReply::Handled().CaptureMouse(GetCachedWidget().ToSharedRef());
 	}
 	return FReply::Unhandled();
 }
 
 FReply UGSDragWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (bIsDragging && MainWidgetSlot.IsValid())
+	if (bIsDragging && MainWidgetSlot)
 	{
-		const FVector2D MousePosition = CanvasGeometry.AbsoluteToLocal(InMouseEvent.GetScreenSpacePosition());
+		const FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
 		FVector2D NewPosition = MousePosition - DragOffset;
-		NewPosition.X = FMath::Clamp(NewPosition.X, 0.f, CanvasSize.X - DraggedWidgetSize.X);
-		NewPosition.Y = FMath::Clamp(NewPosition.Y, 0.f, CanvasSize.Y - DraggedWidgetSize.Y);	
-		MainWidgetSlot->SetPosition(NewPosition);
+
+		NewPosition.X = FMath::Clamp(NewPosition.X, -LocalToMainOffset.X, FixedCanvasSize.X - DraggedWidgetSize.X);
+		NewPosition.Y = FMath::Clamp(NewPosition.Y, -LocalToMainOffset.Y, FixedCanvasSize.Y - DraggedWidgetSize.Y);
 		
+		MainWidgetSlot->SetPosition(NewPosition);
 		return FReply::Handled();
 	}
 	return FReply::Unhandled();
@@ -49,60 +54,92 @@ FReply UGSDragWidget::NativeOnMouseMove(const FGeometry& InGeometry, const FPoin
 
 FReply UGSDragWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (MainWidgetSlot.IsValid() && InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	if (MainWidgetSlot && InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
-		MainWidgetSlot->SetZOrder(0);
-		
+		MainWidgetSlot->SetZOrder(0);	
 		bIsDragging = false;
+		if (bSnapToOriginalPositionAfterRelease)
+		{
+			SnapToOriginalPosition();
+		}		
 		return FReply::Handled().ReleaseMouseCapture();
 	}
 	return FReply::Unhandled();
 }
 
-void UGSDragWidget::SetMainWidgetRef(UUserWidget* Widget)
+void UGSDragWidget::SetMainWidgetRef(UUserWidget* inWidget)
 {
-	DraggedWidget = Widget;
-	if (DraggedWidget.IsValid())
+	DraggedWidget = inWidget;
+	if (UUserWidget* Widget = DraggedWidget.Get())
 	{
+		OriginalParentPanelRef = Widget->GetParent();
 		MainWidgetSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(DraggedWidget.Get());
-		DraggedWidget.Get()->OnVisibilityChanged.AddUniqueDynamic(this, &UGSDragWidget::ReleaseMouseCaptureIfVisibilityChanged);
+		
+		// Wait one frame to ensure position is valid
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this]()
+		{
+			if (MainWidgetSlot)
+			{
+				OriginalPosition = MainWidgetSlot->GetPosition();
+			}
+		});
+		
+		Widget->OnVisibilityChanged.AddUniqueDynamic(this, &UGSDragWidget::ReleaseMouseCaptureIfVisibilityChanged);
 	}
 }
 
-void UGSDragWidget::SetCanvasPanelRef(UCanvasPanel* CanvasPanel)
+void UGSDragWidget::NativeConstruct()
 {
-	CanvasPanelRef = CanvasPanel;
+	Super::NativeConstruct();
+
+	if (const UGSOverlayWidgetController* Controller = UGSBlueprintFunctionLibrary::GetOverlayWidgetController(this))
+	{
+		MainCanvasRef = Controller->CanvasRef;
+	}
 }
 
-void UGSDragWidget::CacheCanvasPropertiesIfNeeded()
+void UGSDragWidget::CachePropertiesIfNeeded()
 {
-	if (bCachedCanvas)
+	if (bCanvasCached)
 	{
 		return;
 	}
 	
-	if (CanvasPanelRef.IsValid() && MainWidgetSlot.IsValid())
+	if (MainCanvasRef.IsValid() && MainWidgetSlot)
 	{
-		bCachedCanvas = true;
-        CanvasSize = CanvasPanelRef->GetCachedGeometry().GetLocalSize();
-        CanvasGeometry = CanvasPanelRef->GetCachedGeometry();
-        DraggedWidgetSize = MainWidgetSlot.Get()->GetSize();		
+		bCanvasCached = true;  
+        CanvasGeometry = MainCanvasRef->GetCachedGeometry();
+        DraggedWidgetSize = MainWidgetSlot.Get()->GetSize();
+		CanvasSize = MainCanvasRef->GetCachedGeometry().GetLocalSize();
 	}		
+}
+
+void UGSDragWidget::SnapToOriginalPosition()
+{
+	if (MainWidgetSlot)
+	{
+        MainWidgetSlot->SetPosition(OriginalPosition);
+	}	
 }
 
 void UGSDragWidget::ReleaseMouseCaptureIfVisibilityChanged(ESlateVisibility NewVisibility)
 {
-	if (!bIsDragging || !MainWidgetSlot.IsValid())
+	if (!bIsDragging || !MainWidgetSlot)
 	{
 		return;
 	}
 		
-	if (NewVisibility== ESlateVisibility::Collapsed || NewVisibility == ESlateVisibility::Hidden)
+	if (NewVisibility == ESlateVisibility::Collapsed || NewVisibility == ESlateVisibility::Hidden)
 	{
 		MainWidgetSlot->SetZOrder(0);
 		bIsDragging = false;
 			
 		FEventReply Reply;
 		UWidgetBlueprintLibrary::ReleaseMouseCapture(Reply);
+
+		if (bSnapToOriginalPositionAfterRelease)
+		{
+			SnapToOriginalPosition();
+		}
 	}
 }

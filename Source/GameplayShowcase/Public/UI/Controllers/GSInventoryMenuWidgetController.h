@@ -22,6 +22,7 @@ struct FGridInfo
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FCreateNewItemSignature, const FItemDefinition& ItemDef, const FGridInfo& GridInfo);
 DECLARE_DELEGATE_RetVal_TwoParams(bool, FFindNewSpaceDelegate, const FItemSize& /*ItemSize*/, FGridInfo& /*OutGridInfo*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FItemProxyStatusChangedSignature, bool bProxyExists, const FItemSize& ProxySize);
 
 
 /**
@@ -35,11 +36,13 @@ class GAMEPLAYSHOWCASE_API UGSInventoryMenuWidgetController : public UGSWidgetCo
 public:
 	virtual void BroadcastInitialValues() override;
 	virtual void BindCallbacksToDependencies() override;
-
-	FCreateNewItemSignature CreateNewItemDelegate;
-	FFindNewSpaceDelegate FindNewSpaceDelegate;
 	
 	bool FindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
+	void CallOnGridItemProxyStatusChanged(bool bProxyExists, const FItemSize& ProxySize);
+	
+	FCreateNewItemSignature CreateNewItemDelegate;
+	FFindNewSpaceDelegate FindNewSpaceDelegate;
+	FItemProxyStatusChangedSignature OnItemProxyStatusChanged;
 	
 private:
 	TWeakObjectPtr<UGSInventoryComponent> InventoryComponent;

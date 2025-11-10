@@ -25,7 +25,7 @@ public:
 	virtual void NativeConstruct() override;
 
 	bool FindFreeSpaceForItem(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
-	
+
 protected:
 	UFUNCTION(BlueprintCallable)
 	void RegisterInventoryGrid(int32 Index, UGSInventoryGrid* NewInventoryGrid);

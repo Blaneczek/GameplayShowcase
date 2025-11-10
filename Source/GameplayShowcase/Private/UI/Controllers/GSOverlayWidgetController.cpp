@@ -2,10 +2,10 @@
 
 
 #include "UI/Controllers/GSOverlayWidgetController.h"
-
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 #include "Systems/Leveling/GSLevelingComponent.h"
+#include "Components/CanvasPanel.h"
 
 void UGSOverlayWidgetController::BroadcastInitialValues()
 {
@@ -90,5 +90,10 @@ void UGSOverlayWidgetController::BindCallbacksToDependencies()
 			OnXPPercentChangedDelegate.Broadcast(Info.XPPercent);
 		});
 	}
+}
+
+void UGSOverlayWidgetController::SetCanvasPanelRef(UCanvasPanel* CanvasPanel)
+{
+	CanvasRef = CanvasPanel;
 }
 

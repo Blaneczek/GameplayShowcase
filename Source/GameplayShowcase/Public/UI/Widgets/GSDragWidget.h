@@ -23,25 +23,38 @@ public:
 	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	UFUNCTION(BlueprintCallable)
-	void SetMainWidgetRef(UUserWidget* Widget);
-	UFUNCTION(BlueprintCallable)
-	void SetCanvasPanelRef(UCanvasPanel* CanvasPanel);
+	void SetMainWidgetRef(UUserWidget* inWidget);
 
+protected:
+	virtual void NativeConstruct() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bSnapToOriginalPositionAfterRelease = false;
+	
+	virtual void SnapToOriginalPosition();
+	
 private:
-	void CacheCanvasPropertiesIfNeeded();
-
+	void CachePropertiesIfNeeded();
+	
 	UFUNCTION()
 	void ReleaseMouseCaptureIfVisibilityChanged(ESlateVisibility NewVisibility);
 	
-	bool bCachedCanvas = false;
+	bool bCanvasCached = false;
 	bool bIsDragging = false;
 	
-    TWeakObjectPtr<UCanvasPanel> CanvasPanelRef;	
-	TWeakObjectPtr<UCanvasPanelSlot> MainWidgetSlot;
+    TWeakObjectPtr<UCanvasPanel> MainCanvasRef;	
+    TWeakObjectPtr<UPanelWidget> OriginalParentPanelRef;
 	TWeakObjectPtr<UUserWidget> DraggedWidget;
 	
+	UPROPERTY()
+	TObjectPtr<UCanvasPanelSlot> MainWidgetSlot;
+	
 	FGeometry CanvasGeometry;
-	FVector2D DragOffset;
 	FVector2D CanvasSize;
+	FVector2D FixedCanvasSize;
 	FVector2D DraggedWidgetSize;
+	FVector2D DragOffset;
+	FVector2D LocalToMainOffset;
+
+	FVector2D OriginalPosition;
 };

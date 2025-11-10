@@ -114,18 +114,21 @@ bool UGSInventoryComponent::TryAddItemToStack(FItemDefinition& Def)
 
 bool UGSInventoryComponent::TryAddNewItem(FItemDefinition& Def)
 {
+	// If item doesn't have GridFragment, occupies 1 slot 
+	FItemSize ItemSize{1,1};
 	if (const FGridFragment* GridFrag = Def.GetFragmentByType<FGridFragment>())
 	{
-		if (UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+		ItemSize = GridFrag->GetGridSize();
+	}
+	
+	if (UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+	{
+		FGridInfo GridInfo;
+		if (InvController->FindFreeSpace(ItemSize, GridInfo))
 		{
-			const FItemSize ItemSize = GridFrag->GetGridSize();
-			FGridInfo GridInfo;
-			if (InvController->FindFreeSpace(ItemSize, GridInfo))
-			{
-				ItemsInstances.Add(CreateItemInstance(Def));
-				OnNewItemAdded.Broadcast(ItemsInstances.Last().Get().GetItemDefinition(), GridInfo);
-				return true;
-			}
+			ItemsInstances.Add(CreateItemInstance(Def));
+			OnNewItemAdded.Broadcast(ItemsInstances.Last().Get().GetItemDefinition(), GridInfo);
+			return true;
 		}
 	}
 	return false;

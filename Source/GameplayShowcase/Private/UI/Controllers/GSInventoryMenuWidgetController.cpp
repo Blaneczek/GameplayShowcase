@@ -4,7 +4,6 @@
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
 
-
 void UGSInventoryMenuWidgetController::BroadcastInitialValues()
 {
 	Super::BroadcastInitialValues();
@@ -26,4 +25,9 @@ void UGSInventoryMenuWidgetController::BindCallbacksToDependencies()
 bool UGSInventoryMenuWidgetController::FindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo)
 {
 	return FindNewSpaceDelegate.Execute(ItemSize, OutGridInfo);
+}
+
+void UGSInventoryMenuWidgetController::CallOnGridItemProxyStatusChanged(bool bProxyExists, const FItemSize& ProxySize)
+{
+	OnItemProxyStatusChanged.Broadcast(bProxyExists, ProxySize);
 }

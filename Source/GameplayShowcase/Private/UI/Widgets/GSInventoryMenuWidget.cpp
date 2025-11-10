@@ -24,7 +24,7 @@ bool UGSInventoryMenuWidget::FindFreeSpaceForItem(const FItemSize& ItemSize, FGr
 		if (Grid.Value->FindFreeSpace(ItemSize, OutGridInfo))
 		{
 			OutGridInfo.GridIndex = Grid.Key;
-			return true;
+			return true;		
 		}
 	}
 	return false;

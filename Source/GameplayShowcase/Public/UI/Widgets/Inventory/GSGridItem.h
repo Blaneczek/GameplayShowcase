@@ -7,8 +7,12 @@
 #include "UI/Widgets/GSWidgetBase.h"
 #include "GSGridItem.generated.h"
 
+class UGSGridItemProxy;
+class UGSDragWidget;
 class UImage;
 struct FItemDefinition;
+
+DECLARE_DELEGATE_OneParam(FOnProxyStatusChanged, bool bProxyExists);
 
 /**
  * 
@@ -19,21 +23,34 @@ class GAMEPLAYSHOWCASE_API UGSGridItem : public UGSWidgetBase
 	GENERATED_BODY()
 
 public:
-	void ConstructItem(const FItemDefinition& Def);
+	void ConstructItem(const FItemDefinition& Def, float inSlotSize);
 
-	FORCEINLINE const FItemSize& GetGridSize() const { return ItemSize; }
+	FORCEINLINE FItemSize GetGridSize() const { return ItemSize; }
+
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+
+	FOnProxyStatusChanged OnProxyStatusChanged;
+	
+protected:
+	UPROPERTY(EditAnywhere)
+    TSubclassOf<UGSGridItemProxy> ItemProxyClass;
 	
 private:
 	void SetItemSize(const FItemDefinition& Def);
 	void SetItemImage(const FItemDefinition& Def);
+
+	void CreateItemProxy();
 	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> ItemImage;
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UImage> AltImage;
-
-	UPROPERTY(EditDefaultsOnly)
-	FItemSize ItemSize;
 	
+	UPROPERTY()
+	TObjectPtr<UGSGridItemProxy> ItemProxy;
+
+	FItemSize ItemSize;
+	float SlotSize = 0.f;
 };
+

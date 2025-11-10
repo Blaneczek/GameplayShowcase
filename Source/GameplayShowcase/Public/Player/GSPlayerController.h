@@ -17,6 +17,7 @@ struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
 
+DECLARE_DELEGATE_RetVal(bool, FOnMouseButtonDownSignature);
 
 UENUM(BlueprintType)
 enum class EGameplayCursorType : uint8
@@ -39,6 +40,9 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
+	FOnMouseButtonDownSignature OnLeftMouseButtonDown;
+	FOnMouseButtonDownSignature	OnRightMouseButtonDown;
+	
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;

@@ -82,6 +82,14 @@ struct FItemSize
 {
 	GENERATED_BODY()
 
+	FItemSize() = default;
+	FItemSize(int32 Row, int32 Column)
+		:RowSize(Row), ColumnSize(Column)
+	{};
+	FItemSize(const FVector2D& Size)
+		:RowSize(Size.X), ColumnSize(Size.Y)
+	{};
+	
 	UPROPERTY(EditAnywhere)
 	int32 RowSize = 0;
 	UPROPERTY(EditAnywhere)

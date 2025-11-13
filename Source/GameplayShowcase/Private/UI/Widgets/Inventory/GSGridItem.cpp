@@ -10,45 +10,41 @@
 #include "UI/Controllers/GSOverlayWidgetController.h"
 #include "UI/Widgets/Inventory/GSGridItemProxy.h"
 
-void UGSGridItem::ConstructItem(const FItemDefinition& Def, float inSlotSize, const TArray<FGridPosition>& Positions)
+void UGSGridItem::ConstructGridItem(int32 InInventoryGridIndex, const FItemInstance& Item, float inSlotSize, const TArray<FGridPosition>& Positions)
 {
+	const FItemDefinition& Def = Item.GetItemDefinition();
+	InventoryGridIndex = InInventoryGridIndex;
+	ItemID = Item.GetInstanceID();
+	ItemType = Def.Type;
 	GridPositions = Positions;
 	SlotSize = inSlotSize;
-	SetItemSize(Def);
-	SetItemImage(Def);
+	
+	SetGridItemSize(Def.GetFragmentByType<FGridFragment>());
+	SetGridItemIcon(Def.GetFragmentByType<FImageFragment>());
 
-	if (UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
-	{
-		InvController->OnItemProxyStatusChanged.AddLambda([this](bool bProxyExists, const FItemSize& Size)
-		{
-			bProxyExists ? SetVisibility(ESlateVisibility::HitTestInvisible): SetVisibility(ESlateVisibility::Visible);
-		});
-	}
+	BindToInventoryController();
 }
 
-void UGSGridItem::SetItemSize(const FItemDefinition& Def)
+void UGSGridItem::SetGridItemSize(const FGridFragment* GridFragment)
 {
-	if (const FGridFragment* GridFrag = Def.GetFragmentByType<FGridFragment>())
+	if (GridFragment)
 	{
-		ItemSize = GridFrag->GetGridSize();
+		GridItemSize = GridFragment->GetGridSize();
 	}
 	// Item occupies 1 slot
 	else
 	{
-		ItemSize = FItemSize(1,1);
+		GridItemSize = FItemSize(1,1);
 	}
 }
 
-void UGSGridItem::SetItemImage(const FItemDefinition& Def)
+void UGSGridItem::SetGridItemIcon(const FImageFragment* ImageFragment)
 {
-	const FImageFragment* ImageFrag = Def.GetFragmentByType<FImageFragment>();
-	if (ImageFrag && ImageFrag->GetIcon())
+	if (ImageFragment&& ImageFragment->GetIcon())
 	{
-		ItemIcon->SetBrushFromTexture(ImageFrag->GetIcon(), false);
-		return;
-	}
-	
-	if (AltIcon)
+		ItemIcon->SetBrushFromTexture(ImageFragment->GetIcon(), false);
+	}	
+	else if (AltIcon)
 	{
 		ItemIcon->SetBrushFromTexture(AltIcon, false);
 	}
@@ -64,17 +60,17 @@ void UGSGridItem::CreateItemProxy()
 	ItemProxy = CreateWidget<UGSGridItemProxy>(this, ItemProxyClass);
 	if (ItemProxy)
 	{
-		if (UGSOverlayWidgetController* Controller = UGSBlueprintFunctionLibrary::GetOverlayWidgetController(this))
+		if (const UGSOverlayWidgetController* Controller = UGSBlueprintFunctionLibrary::GetOverlayWidgetController(this))
 		{
-			UCanvasPanelSlot* ProxySlot = Controller->CanvasRef->AddChildToCanvas(ItemProxy);
-			const FVector2D WidgetSize = FVector2D(SlotSize * ItemSize.ColumnSize, SlotSize * ItemSize.RowSize);
+			UCanvasPanelSlot* ProxySlot = Controller->GetCanvasPanelRef()->AddChildToCanvas(ItemProxy);
+			const FVector2D WidgetSize = FVector2D(SlotSize * GridItemSize.ColumnSize, SlotSize * GridItemSize.RowSize);
 			UTexture2D* Icon = Cast<UTexture2D>(ItemIcon->GetBrush().GetResourceObject());
-			ItemProxy->InitProxy(Icon,this, ProxySlot, Controller->CanvasRef, WidgetSize, ItemSize);
+			ItemProxy->InitProxy(Icon,this, ProxySlot, Controller->CanvasRef, WidgetSize, GridItemSize);
 
-			if (UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+			if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
 			{
-				InvController->CallOnGridItemProxyStatusChanged(true, ItemSize);
-				InvController->SetProxyGridItem(this);
+				InvController->CallOnGridItemProxyStatusChanged(true, GridItemSize);
+				InvController->SetGridItemRef(this);
 			}
 		}
 	}
@@ -87,5 +83,41 @@ FReply UGSGridItem::NativeOnMouseButtonDown(const FGeometry& InGeometry, const F
 		CreateItemProxy();
         return FReply::Handled();
 	}
+	
+	if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
+	{
+		if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
+		{
+			InvController->SetGridItemRef(this);
+			bIsEquipped ? InvController->TryUnequipGridItem() : InvController->TryActivateItemAction(ItemID);
+		}
+		return FReply::Handled();
+	}
 	return FReply::Unhandled();
+}
+
+void UGSGridItem::BindToInventoryController()
+{
+	// If any proxy exists, don't allow to click on a GridItem 
+	if (UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+	{
+		CachedInventoryController = InvController;
+		InvController->OnItemProxyStatusChanged.AddLambda([this](bool bProxyExists, const FItemSize& Size)
+		{
+			bProxyExists ? SetVisibility(ESlateVisibility::HitTestInvisible): SetVisibility(ESlateVisibility::Visible);
+		});
+	}
+}
+
+void UGSGridItem::RemoveProxy()
+{
+	if (ItemProxy)
+	{
+		ItemProxy->RemoveProxy();
+	}
+}
+
+void UGSGridItem::ResetGridPositions()
+{
+	GridPositions.Reset();
 }

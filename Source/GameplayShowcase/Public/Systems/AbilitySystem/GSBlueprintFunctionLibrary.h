@@ -32,6 +32,7 @@ public:
 	static UGSInventoryMenuWidgetController* GetInventoryMenuWidgetController(const UObject* WorldContextObject);
 	
 private:
+	// TODO: Optimize this
 	template<typename T>
 	static T* GetWidgetControllerFromHUD(const UObject* WorldContextObject)
 	{

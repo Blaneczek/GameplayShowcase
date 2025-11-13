@@ -6,11 +6,21 @@
 #include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 
+void UGSGridSlot::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+	{
+		Controller->OnItemProxyStatusChanged.AddUObject(this, &UGSGridSlot::SetGridItemProxyStatus);
+	}
+}
+
 void UGSGridSlot::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (bItemProxyExists && GridSlot && CheckAllItemPositionsDelegate.IsBound())
+	if (bItemProxyExists && GridSlot && CheckAllGridItemPositionsDelegate.IsBound())
 	{
-		CheckAllItemPositionsDelegate.Execute(Position, ProxySize);
+		CheckAllGridItemPositionsDelegate.Execute(Position, ProxySize);
 	}
 }
 
@@ -18,7 +28,7 @@ void UGSGridSlot::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 {
 	if (bItemProxyExists)
 	{
-		ClearAllItemsPositionsDelegate.ExecuteIfBound();
+		ClearAllGridItemsPositionsDelegate.ExecuteIfBound();
 	}	
 }
 
@@ -28,11 +38,10 @@ FReply UGSGridSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, const F
 	{
 		if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
 		{
-			Controller->TryRelocateItemGrid(InventoryGridIndex);
+			Controller->RelocateGridItem(InventoryGridIndex);
 		}
-		return FReply::Handled();
 	}
-	return FReply::Unhandled();
+	return FReply::Handled();
 }
 
 void UGSGridSlot::SetOccupancyStatus(bool bIsOccupied)
@@ -40,7 +49,7 @@ void UGSGridSlot::SetOccupancyStatus(bool bIsOccupied)
 	bOccupied = bIsOccupied;
 }
 
-void UGSGridSlot::SetItemProxyStatus(bool bProxyExists, const FItemSize& inProxySize)
+void UGSGridSlot::SetGridItemProxyStatus(bool bProxyExists, const FItemSize& inProxySize)
 {
 	bItemProxyExists = bProxyExists;
 	ProxySize = inProxySize;
@@ -51,30 +60,16 @@ void UGSGridSlot::SetItemProxyStatus(bool bProxyExists, const FItemSize& inProxy
 	}
 }
 
-void UGSGridSlot::SetHoveredColor(bool bCanRelocateItem)
+void UGSGridSlot::SetRelocationStatus(bool bCanRelocateItem)
 {
-	if (GridSlot)
-	{
-		bRelocationAllowed = bCanRelocateItem;
-		bCanRelocateItem ? GridSlot->SetBrushColor(RelocationAllowedColor) : GridSlot->SetBrushColor(RelocationForbiddenColor);
-	}
+	bRelocationAllowed = bCanRelocateItem;
+	bCanRelocateItem ? GridSlot->SetBrushColor(RelocationAllowedColor) : GridSlot->SetBrushColor(RelocationForbiddenColor);
 }
 
 void UGSGridSlot::ClearSlot()
 {
-	if (GridSlot)
-	{
-		GridSlot->SetBrushColor(DefaultColor);
-	}
+	GridSlot->SetBrushColor(DefaultColor);
 }
 
-void UGSGridSlot::NativeConstruct()
-{
-	Super::NativeConstruct();
 
-	if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
-	{
-		Controller->OnItemProxyStatusChanged.AddUObject(this, &UGSGridSlot::SetItemProxyStatus);
-	}
-}
 

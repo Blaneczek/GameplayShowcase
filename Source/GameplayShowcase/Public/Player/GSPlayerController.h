@@ -42,6 +42,8 @@ public:
 
 	FOnMouseButtonDownSignature OnLeftMouseButtonDown;
 	FOnMouseButtonDownSignature	OnRightMouseButtonDown;
+
+	bool bCanMouseAction = true;
 	
 protected:
 	virtual void BeginPlay() override;
@@ -108,8 +110,14 @@ private:
 	/** UI **/
 	void InitializeHUD();
 	
-	template <typename T> requires std::is_base_of_v<UGSWidgetBase, T>
-	void OpenOrCloseMenuByType();
+	template <typename T> requires TIsDerivedFrom<T, UGSWidgetBase>::Value
+	void OpenOrCloseMenuByType()
+	{
+		if (CachedHUD)
+		{
+			CachedHUD->OpenOrCloseMenuByType<T>();
+		}
+	}
 	/*******/
 	
 	UGSAbilitySystemComponent* GetASC();
@@ -127,11 +135,3 @@ private:
 	bool bWSADMovement = false;
 };
 
-template <typename T> requires std::is_base_of_v<UGSWidgetBase, T>
-void AGSPlayerController::OpenOrCloseMenuByType()
-{
-	if (CachedHUD)
-	{
-		CachedHUD->OpenOrCloseMenuByType<T>();
-	}
-}

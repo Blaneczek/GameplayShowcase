@@ -4,9 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "StructUtils/InstancedStruct.h"
 #include "GSItemFragment.generated.h"
 
+struct FStreamableHandle;
 class UImage;
 class UGameplayEffect;
 
@@ -36,6 +39,41 @@ struct FItemFragment
 
 	FORCEINLINE FGameplayTag GetFragmentTag() const { return FragmentTag; }
 	FORCEINLINE void SetFragmentTag(FGameplayTag Tag) { FragmentTag = Tag; }
+
+	virtual void LoadData() {};
+	
+protected:
+	template <typename AssetType>
+	requires TIsDerivedFrom<AssetType, TSoftObjectPtr<typename AssetType::ElementType>>::Value
+	|| TIsDerivedFrom<AssetType, TSoftClassPtr<typename AssetType::ElementType>>::Value
+	void LoadAsyncByType(const AssetType& Asset)
+	{
+		if (Asset.IsNull())
+		{
+			return;
+		}
+		
+		FStreamableManager& Manager = UAssetManager::GetStreamableManager();
+		const FSoftObjectPath Path = Asset.ToSoftObjectPath();
+		DataHandle = Manager.RequestAsyncLoad(Path);
+	}
+
+	template <typename AssetType>
+	requires TIsDerivedFrom<AssetType, TSoftObjectPtr<typename AssetType::ElementType>>::Value
+	|| TIsDerivedFrom<AssetType, TSoftClassPtr<typename AssetType::ElementType>>::Value
+	void LoadSyncByType(const AssetType& Asset)
+	{
+		if (Asset.IsNull())
+		{
+			return;
+		}
+		
+		FStreamableManager& Manager = UAssetManager::GetStreamableManager();
+		const FSoftObjectPath Path = Asset.ToSoftObjectPath();
+		DataHandle = Manager.RequestSyncLoad(Path);
+	}
+	
+	TSharedPtr<FStreamableHandle> DataHandle;
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -43,8 +81,6 @@ private:
 };
 
 
-
-/**********************/
 USTRUCT(BlueprintType)
 struct FStackableFragment : public FItemFragment
 {
@@ -73,7 +109,7 @@ private:
 	bool bAlreadyDrawn = false;
 	int32 DrawnStackNum = 0;
 };
-/**********************/
+
 
 USTRUCT(BlueprintType)
 struct FWidgetFragment : public FItemFragment
@@ -84,7 +120,15 @@ struct FWidgetFragment : public FItemFragment
 };
 
 
-/**********************/
+USTRUCT(BlueprintType)
+struct FConsumableFragment : public FWidgetFragment
+{
+	GENERATED_BODY()
+
+	virtual void AdaptToWidget() override;
+};
+
+
 USTRUCT(BlueprintType)
 struct FItemSize
 {
@@ -115,25 +159,26 @@ private:
 	UPROPERTY(EditAnywhere)
 	FItemSize GridSize;
 };
-/**********************/
 
 
-/**********************/
 USTRUCT(BlueprintType)
 struct FImageFragment : public FItemFragment
 {
 	GENERATED_BODY()
 
-	FORCEINLINE UTexture2D* GetIcon() const { return Icon; }
+	FORCEINLINE UTexture2D* GetIcon() const
+	{
+		return Icon.IsValid() ? Icon.Get() : nullptr;
+	}
+
+	virtual void LoadData() override;
 	
 private:
 	UPROPERTY(EditAnywhere)
-	TObjectPtr<UTexture2D> Icon = nullptr;
+	TSoftObjectPtr<UTexture2D> Icon = nullptr;
 };
-/**********************/
 
 
-/**********************/
 class AGSPlayerCharacterBase;
 class AGSEquipItemActor;
 USTRUCT(BlueprintType)
@@ -143,11 +188,10 @@ struct FEquipModifier : public FWidgetFragment
 
 	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) {};
 	virtual void OnUnequip(AGSPlayerCharacterBase* OwningChar) {};
+	
 };
-/**********************/
 
 
-/**********************/
 USTRUCT(BlueprintType)
 struct FDamagePair
 {
@@ -170,19 +214,19 @@ struct FDamageModifier : public FEquipModifier
 	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
 	virtual void OnUnequip(AGSPlayerCharacterBase* OwningChar) override;
 
+	virtual void LoadData() override;
+	
 private:
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<UGameplayEffect> DamageModifierEffect;
+	TSoftClassPtr<UGameplayEffect> DamageModifierEffect = nullptr;
 	
 	UPROPERTY(EditAnywhere)
 	FDamagePair AttackDamage;
 	UPROPERTY(EditAnywhere)
 	FDamagePair MagicDamage;
 };
-/**********************/
 
 
-/**********************/
 USTRUCT(BlueprintType)
 struct FEquipmentFragment : public FItemFragment
 {
@@ -195,6 +239,8 @@ struct FEquipmentFragment : public FItemFragment
 	AGSEquipItemActor* SpawnEquipmentActor(USkeletalMeshComponent* AttachMesh);
 	void DestroyEquippedActor();
 
+	virtual void LoadData() override;
+	
 private:
 	FName GetSocketEnumShortName() const;
 
@@ -207,8 +253,7 @@ private:
 	EEquipmentSocket SocketAttachPoint = EEquipmentSocket::NONE;
 
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AGSEquipItemActor> EquipActorClass = nullptr;
-	
+	TSoftClassPtr<AGSEquipItemActor> EquipActorClass = nullptr;
+
 	TWeakObjectPtr<AGSEquipItemActor> EquippedActor = nullptr;	
 };
-/**********************/

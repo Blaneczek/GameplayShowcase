@@ -7,6 +7,7 @@
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Inventory/Items/GSEquipItemActor.h"
 #include "Systems/Inventory/Items/GSItemInstance.h"
+#include "Systems/Inventory/Items/GSItemTags.h"
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
 
 
@@ -35,31 +36,66 @@ void UGSEquipmentComponent::InitInventoryComponent()
 {
 	if (InventoryComponent.IsValid())
 	{
-		InventoryComponent.Get()->OnItemEquipped.AddDynamic(this, &UGSEquipmentComponent::OnItemEquipped);
-		InventoryComponent.Get()->OnItemUnequipped.AddDynamic(this, &UGSEquipmentComponent::OnItemUnequipped);
+		InventoryComponent.Get()->TryEquipItemDelegate.BindUObject(this, &UGSEquipmentComponent::TryEquipItem);
+		InventoryComponent.Get()->UnequipItemDelegate.BindUObject(this, &UGSEquipmentComponent::UnequipItem);
 	}
 }
 
-void UGSEquipmentComponent::OnItemEquipped(FItemInstance& EquippedItem)
+bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 {
-	FItemDefinition& ItemDefinition = EquippedItem.GetItemDefinitionMutable();
-
+	if (!EquippedItem)
+	{
+		return false;
+	}
+	
+	FItemDefinition& ItemDefinition = EquippedItem->GetItemDefinitionMutable();
+	if (!CheckIfCanEquipItem(ItemDefinition))
+	{
+		return false;
+	}
+	
 	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.GetFragmentByTypeMutable<FEquipmentFragment>())
 	{
 		EquipmentFragment->OnEquip(OwningCharacter.Get());
         AGSEquipItemActor* SpawnedActor = SpawnEquippedActor(EquipmentFragment);
-        EquippedActors.Add(SpawnedActor);
-	}	
+        EquippedActors.Add(ItemDefinition.Type.RequestDirectParent(), SpawnedActor);
+		return true;
+	}
+	return false;
 }
 
-void UGSEquipmentComponent::OnItemUnequipped(FItemInstance& UnequippedItem)
+bool UGSEquipmentComponent::CheckIfCanEquipItem(const FItemDefinition& ItemDefinition)
 {
-	FItemDefinition& ItemDefinition = UnequippedItem.GetItemDefinitionMutable();
+	// Check if there is already equipped item
+	if (ItemDefinition.Type.MatchesTag(GSItemTags::Type::Weapon.GetTag()) || ItemDefinition.Type.MatchesTag(GSItemTags::Type::Armor.GetTag()))
+	{
+		if (EquippedActors.Contains(ItemDefinition.Type.RequestDirectParent()))
+		{
+			// TODO: switch weapon if can
+			return false;
+		}	
+	}
+	else if (EquippedActors.Contains(ItemDefinition.Type))
+	{
+		// TODO: switch weapon if can
+		return false;
+	}
+	
+	return true;
+}
 
+void UGSEquipmentComponent::UnequipItem(FItemInstance* UnequippedItem)
+{
+	if (!UnequippedItem)
+	{
+		return;
+	}
+	
+	FItemDefinition& ItemDefinition = UnequippedItem->GetItemDefinitionMutable();
 	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.GetFragmentByTypeMutable<FEquipmentFragment>())
 	{
 		EquipmentFragment->OnUnequip(OwningCharacter.Get());        	
-        RemoveEquippedActor(EquipmentFragment);
+        RemoveEquippedActor(ItemDefinition.Type.RequestDirectParent(), EquipmentFragment);
 	}
 }
 
@@ -71,11 +107,9 @@ AGSEquipItemActor* UGSEquipmentComponent::SpawnEquippedActor(FEquipmentFragment*
 	return SpawnedActor;
 }
 
-void UGSEquipmentComponent::RemoveEquippedActor(FEquipmentFragment* EquipmentFragment)
+void UGSEquipmentComponent::RemoveEquippedActor(const FGameplayTag& EquipType, FEquipmentFragment* EquipmentFragment)
 {
-	if (AGSEquipItemActor* Item = EquipmentFragment->GetEquippedActor())
-	{
-		EquippedActors.Remove(Item);
-		EquipmentFragment->DestroyEquippedActor();
-	}
+	UE_LOG(LogTemp, Warning, TEXT("TEXT"));
+	EquippedActors.Remove(EquipType);
+	EquipmentFragment->DestroyEquippedActor();
 }

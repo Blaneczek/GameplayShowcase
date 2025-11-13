@@ -7,6 +7,8 @@
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 #include "GSInventoryMenuWidget.generated.h"
 
+class UCanvasPanel;
+class UGSGridSlot;
 struct FItemDefinition;
 struct FGridPosition;
 class UGSInventoryMenuWidgetController;
@@ -14,7 +16,9 @@ class UGSInventoryGrid;
 
 
 /**
- * 
+ * Main inventory menu widget responsible for managing and displaying
+ * all player inventory grids and equipment slots in the UI.
+ * This widget acts as the visual layer of the inventory system.
  */
 UCLASS()
 class GAMEPLAYSHOWCASE_API UGSInventoryMenuWidget : public UGSWidgetBase
@@ -22,21 +26,78 @@ class GAMEPLAYSHOWCASE_API UGSInventoryMenuWidget : public UGSWidgetBase
 	GENERATED_BODY()
 
 public:
-	virtual void NativeConstruct() override;
-
+	/**
+	 * Attempts to find a free space across all registered inventory grids
+	 * that can fit an item of the given size.
+	 *
+	 * @param ItemSize		desired item size in grid units (rows x columns).
+	 * @param OutGridInfo	information about the found grid and positions (if successful).
+	 * @return				true if free space was found.
+	 */
 	bool FindFreeSpaceForItem(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
 
 protected:
+	virtual void NativeConstruct() override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	
 	UFUNCTION(BlueprintCallable)
-	void RegisterInventoryGrid(int32 Index, UGSInventoryGrid* NewInventoryGrid);
-
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<UGSInventoryMenuWidgetController> InventoryController;
+	void RegisterInventoryGrid(UGSInventoryGrid* NewInventoryGrid);
+	UFUNCTION(BlueprintCallable)
+	void RegisterEquipGridSlots(TMap<FGameplayTag, UGSGridSlot*> InEquipSlots);
+	
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	TObjectPtr<UCanvasPanel> EquipmentPanel;
 	
 private:
-	void AddItem(const FItemDefinition& ItemDef, const FGridInfo& GridInfo);
-	void RelocateGridItem(int32 GridIndex, UGSGridItem* GridItem);
+	/** Adds new GridItem into the appropriate grid. */
+	void AddGridItem(const FItemInstance& Item, const FGridInfo& GridInfo);
+
+	/**
+	 * Relocates a GridItem to a new position.
+	 * Used when moving GridItem manually (by proxy).
+	 *
+	 * @param GridItem				GridItem to move.
+	 * @param InventoryGridIndex	target inventory grid index.
+	 */
+	void RelocateGridItem(UGSGridItem* GridItem, int32 InventoryGridIndex);
+
+	/**
+	 * Relocates a GridItem to a new position.
+	 * Used when moving GridItem by item action (right mouse button).
+	 *
+	 * @param GridItem				GridItem to move.
+	 * @param InventoryGridIndex	target inventory grid index.
+	 * @param Positions				array of slot positions to occupy in the grid.
+	 */
+	void RelocateGridItem(UGSGridItem* GridItem, int32 InventoryGridIndex, TArray<FGridPosition>&& Positions);
+
+	/**
+	 * Checks whether the GridItem can be equipped into a specific slot.
+	 *
+	 * @param ItemType		gameplay tag representing the item’s type.
+	 * @param ClickedSlot	slot the player interacted with.
+	 * @param OutEquipSlot	output reference to the correct equip slot if valid.
+	 * @return				true if the GridItem can be equipped into the slot.
+	 */
+	bool CanEquipItem(const FGameplayTag& ItemType, UGSGridSlot* ClickedSlot, UGSGridSlot*& OutEquipSlot);
+
+	/**
+	 * Attempts to unequip a GridItem and relocate it back into the inventory grid.
+	 * Used when using item action (right mouse button).
+	 *
+	 * @param UnequippedGridItem	GridItem being unequipped.
+	 * @return						true if the GridItem was successfully placed in inventory.
+	 */
+	bool TryUnequipGridItem(UGSGridItem* UnequippedGridItem);
+
+	/** Visually equips a GridItem by moving it from the inventory grid to the equip slots. */
+	void EquipGridItem(UGSGridItem* GridItem, UGSGridSlot* EquipSlot);
+
+	/** Finds the equip slot widget that matches the given item type. */
+	UGSGridSlot* FindEquipGridSlot(const FGameplayTag& EquipType);
 	
 	UPROPERTY()
-	TMap<int32, UGSInventoryGrid*> InventoryGrids;
+	TMap<int32, UGSInventoryGrid*> InventoryGrids;	
+	UPROPERTY()
+	TMap<FGameplayTag, UGSGridSlot*> EquipSlots;
 };

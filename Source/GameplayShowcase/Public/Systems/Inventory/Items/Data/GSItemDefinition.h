@@ -26,11 +26,11 @@ struct FItemDefinition
 	void SpawnWorldActor(const UObject* WorldContextObject, const FTransform& SpawnTransform);
 
 	/** Finds a mutable fragment of a given type, or nullptr if not found. */
-	template<typename FragmentType> requires std::derived_from<FragmentType, FItemFragment>
+	template<typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
 	FragmentType* GetFragmentByTypeMutable();
 
 	/** Finds a fragment of a given type, or nullptr if not found. */
-	template<typename FragmentType> requires std::derived_from<FragmentType, FItemFragment>
+	template<typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
 	const FragmentType* GetFragmentByType() const;
 
 	/** Unique name of this item. */
@@ -43,7 +43,7 @@ struct FItemDefinition
 
 	/** The class of the actor representing this item in the world. */
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<AActor> WorldActorClass = nullptr;
+	TSoftClassPtr<AActor> WorldActorClass = nullptr;
 
 	/** Fragments that describe this item’s behavior. */
 	UPROPERTY(EditAnywhere, meta=(ExludeBaseStruct))
@@ -54,7 +54,7 @@ private:
 	void ClearFragments();	
 };
 
-template <typename FragmentType> requires std::derived_from<FragmentType, FItemFragment>
+template <typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
 FragmentType* FItemDefinition::GetFragmentByTypeMutable()
 {
 	for (TInstancedStruct<FItemFragment>& Fragment : Fragments)
@@ -67,7 +67,7 @@ FragmentType* FItemDefinition::GetFragmentByTypeMutable()
 	return nullptr;
 }
 
-template <typename FragmentType> requires std::derived_from<FragmentType, FItemFragment>
+template <typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
 const FragmentType* FItemDefinition::GetFragmentByType() const
 {
 	for (const TInstancedStruct<FItemFragment>& Fragment : Fragments)

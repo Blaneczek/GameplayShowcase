@@ -141,9 +141,12 @@ void AGSPlayerController::StopAutoMove()
 	{
 		return;
 	}	
-	if (OnLeftMouseButtonDown.IsBound() && OnLeftMouseButtonDown.Execute())
+	if (OnLeftMouseButtonDown.IsBound())
 	{
-		return;
+		if (OnLeftMouseButtonDown.Execute())
+		{
+			return;
+		}		
 	}
 	
 	FHitResult CursorHit;
@@ -174,9 +177,12 @@ void AGSPlayerController::Look(const FInputActionValue& Value)
 
 void AGSPlayerController::EnableLook(const FInputActionValue& Value)
 {
-	if (OnRightMouseButtonDown.IsBound() && OnRightMouseButtonDown.Execute())
+	if (OnRightMouseButtonDown.IsBound())
 	{
-		return;
+		if (OnRightMouseButtonDown.Execute())
+		{
+			return;
+		}
 	}
 	
 	bCanLook = Value.Get<bool>();

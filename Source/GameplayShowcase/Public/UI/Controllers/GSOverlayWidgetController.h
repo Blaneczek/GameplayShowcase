@@ -20,15 +20,16 @@ class GAMEPLAYSHOWCASE_API UGSOverlayWidgetController : public UGSWidgetControll
 {
 	GENERATED_BODY()
 
-	UFUNCTION(BlueprintCallable)
-	UCanvasPanel* GetCanvasPanelRef() const { return CanvasRef.Get(); }
-	
+
 public:
 	virtual void BroadcastInitialValues() override;
 	virtual void BindCallbacksToDependencies() override;
 
 	UFUNCTION(BlueprintCallable)
 	void SetCanvasPanelRef(UCanvasPanel* CanvasPanel);
+
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE UCanvasPanel* GetCanvasPanelRef() const { return CanvasRef.Get(); }
 	
 	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
 	FAttributeChangedSignature OnHPChanged;

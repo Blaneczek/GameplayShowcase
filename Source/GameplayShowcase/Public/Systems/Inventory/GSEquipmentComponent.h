@@ -3,10 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "Components/ActorComponent.h"
 #include "GSEquipmentComponent.generated.h"
 
 
+struct FItemDefinition;
 struct FEquipmentFragment;
 class AGSPlayerCharacterBase;
 class AGSEquipItemActor;
@@ -24,22 +26,21 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-
 private:
 	void InitInventoryComponent();
 	
-	UFUNCTION()
-	void OnItemEquipped(FItemInstance& EquippedItem);
-	UFUNCTION()
-	void OnItemUnequipped(FItemInstance& UnequippedItem);
-
+	bool TryEquipItem(FItemInstance* EquippedItem);
+	void UnequipItem(FItemInstance* UnequippedItem);
+	bool CheckIfCanEquipItem(const FItemDefinition& ItemDefinition);
+	
 	AGSEquipItemActor* SpawnEquippedActor(FEquipmentFragment* EquipmentFragment) const;
-	void RemoveEquippedActor(FEquipmentFragment* EquipmentFragment);
+	void RemoveEquippedActor(const FGameplayTag& EquipType, FEquipmentFragment* EquipmentFragment);
+
 	
 	TWeakObjectPtr<UGSInventoryComponent> InventoryComponent;
 	TWeakObjectPtr<AGSPlayerCharacterBase> OwningCharacter;
 	TWeakObjectPtr<USkeletalMeshComponent> OwnerSkeletalMesh;
 
 	UPROPERTY()
-	TArray<TObjectPtr<AGSEquipItemActor>> EquippedActors;
+	TMap<FGameplayTag, AGSEquipItemActor*> EquippedActors;
 };

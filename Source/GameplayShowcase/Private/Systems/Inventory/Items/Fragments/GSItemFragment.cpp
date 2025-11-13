@@ -9,14 +9,34 @@
 #include "Systems/Inventory/Items/GSEquipItemActor.h"
 #include "Systems/Inventory/Items/Fragments/GSFragmentTags.h"
 
+void FConsumableFragment::AdaptToWidget()
+{
+	FWidgetFragment::AdaptToWidget();
+}
+
 void FDamageModifier::AdaptToWidget()
 {
 	FEquipModifier::AdaptToWidget();
 }
 
+void FImageFragment::LoadData()
+{
+	LoadSyncByType(Icon);
+}
+
+void FEquipmentFragment::LoadData()
+{
+	LoadAsyncByType(EquipActorClass);
+}
+
+void FDamageModifier::LoadData()
+{
+	LoadAsyncByType(DamageModifierEffect);
+}
+
 void FDamageModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
 {
-	if (!OwningChar)
+	if (!OwningChar || !DamageModifierEffect.IsValid())
 	{
 		return;
 	}
@@ -25,7 +45,7 @@ void FDamageModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
 	{
 		FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
 		ContextHandle.AddSourceObject(OwningChar);
-		const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(DamageModifierEffect, 1.f, ContextHandle);
+		const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(DamageModifierEffect.Get(), 1.f, ContextHandle);
 		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
 		
 		Spec->SetSetByCallerMagnitude(GSGameplayTags::Attributes::Primary_AttackDamageMin.GetTag(), AttackDamage.Min);
@@ -48,6 +68,8 @@ void FDamageModifier::OnUnequip(AGSPlayerCharacterBase* OwningChar)
 		ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSFragmentTags::Modifiers::Damage.GetTag()));
 	}
 }
+
+
 
 void FEquipmentFragment::OnEquip(AGSPlayerCharacterBase* OwningChar)
 {
@@ -86,12 +108,12 @@ AGSEquipItemActor* FEquipmentFragment::GetEquippedActor() const
 
 AGSEquipItemActor* FEquipmentFragment::SpawnEquipmentActor(USkeletalMeshComponent* AttachMesh)
 {
-	if (!EquipActorClass || !AttachMesh)
+	if (!EquipActorClass.IsValid() || !AttachMesh)
 	{
 		return nullptr;
 	}
 
-	AGSEquipItemActor* SpawnedActor = AttachMesh->GetWorld()->SpawnActor<AGSEquipItemActor>(EquipActorClass);
+	AGSEquipItemActor* SpawnedActor = AttachMesh->GetWorld()->SpawnActor<AGSEquipItemActor>(EquipActorClass.Get());
 	if (IsValid(SpawnedActor))
 	{
 		const FName SocketName = GetSocketEnumShortName();

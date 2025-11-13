@@ -14,32 +14,37 @@
 #include "UI/Widgets/Inventory/GSGridItem.h"
 
 
-void UGSGridItemProxy::InitProxy(UTexture2D* ItemIcon, UGSGridItem* GridItem, UCanvasPanelSlot* inSlot, TWeakObjectPtr<UCanvasPanel> Canvas, const FVector2D& inWidgetSize, const FItemSize& inProxySize)
+void UGSGridItemProxy::InitProxy(UTexture2D* ItemIcon, UGSGridItem* GridItem, UCanvasPanelSlot* InSlot, TWeakObjectPtr<UCanvasPanel> InCanvas, const FVector2D& InWidgetSize, const FItemSize& InProxySize)
 {
-	if (ItemIcon)
+	// Must be not hit testable so that other widgets can be clicked
+	SetVisibility(ESlateVisibility::HitTestInvisible);
+
+	if (!ItemIcon || !InSlot)
 	{
-		ItemProxyIcon->SetBrushFromTexture(ItemIcon);
+		RemoveProxy();
+		return;
 	}
 	
+	ItemProxyIcon->SetBrushFromTexture(ItemIcon);
 	GridItemRef = GridItem;
-	WidgetSize = inWidgetSize;
-	ProxySize = inProxySize;
-	CanvasSlot = inSlot;
-	CanvasPanel = Canvas;
-	
-	SetVisibility(ESlateVisibility::HitTestInvisible);
-	StartDragging();
+	WidgetSize = InWidgetSize;
+	ProxySize = InProxySize;
+	CanvasSlot = InSlot;
+	CanvasPanel = InCanvas;
 
+	// Widget is not hit testable, but we need to be able to remove widget when right mouse button is down 
 	if (AGSPlayerController* PlayerController = Cast<AGSPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
-		PlayerController->OnLeftMouseButtonDown.BindUObject(this, &UGSGridItemProxy::RemoveProxy);
+		//TODO: LeftMouseButton - if on Level, remove item from inventory
+		//PlayerController->OnLeftMouseButtonDown.BindUObject(this, &UGSGridItemProxy::RemoveProxy);
 		PlayerController->OnRightMouseButtonDown.BindUObject(this, &UGSGridItemProxy::RemoveProxy);
-	}
+	}	
+    InitDragging();
 }
 
-void UGSGridItemProxy::StartDragging()
+void UGSGridItemProxy::InitDragging()
 {
-	if (!CanvasPanel.IsValid() || !CanvasSlot)
+	if (!CanvasPanel.IsValid())
 	{
 		return;		
 	}
@@ -56,7 +61,7 @@ void UGSGridItemProxy::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
 {
 	Super::NativeTick(MyGeometry, DeltaTime);
 
-	if (bIsDragging && CanvasSlot)
+	if (bIsDragging)
 	{
 		const FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
 		FVector2D NewPosition = MousePosition - (WidgetSize * 0.5f);
@@ -71,6 +76,10 @@ void UGSGridItemProxy::NativeDestruct()
 {
 	Super::NativeDestruct();
 
+	GridItemRef = nullptr;
+	CanvasSlot = nullptr;
+	
+	// Remove bindings to allow mouse actions in gameplay when proxy is destroyed
 	if (AGSPlayerController* PlayerController = Cast<AGSPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
 		PlayerController->OnLeftMouseButtonDown.Unbind();

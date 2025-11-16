@@ -2,7 +2,6 @@
 
 
 #include "UI/Widgets/Inventory/GSEquipSlot.h"
-#include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 
 
@@ -10,7 +9,7 @@ FReply UGSEquipSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, const 
 {
 	if (bItemProxyExists && InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
-		if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+		if (UGSInventoryMenuWidgetController* Controller = CachedInventoryController.Get())
 		{
 			Controller->TryEquipGridItem(this);
 		}		

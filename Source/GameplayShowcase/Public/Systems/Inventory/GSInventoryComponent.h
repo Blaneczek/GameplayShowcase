@@ -31,9 +31,10 @@ struct FGridPosition
 	int32 ColumnsIndex = 0;
 };
 
-DECLARE_DELEGATE_RetVal_OneParam(bool, FTryChangeEquipItemStatusSignature, FItemInstance* Item);
-DECLARE_DELEGATE_TwoParams(FOnNewItemAddedSignature, const FItemInstance& Item, const FGridInfo& GridInfo);
-DECLARE_DELEGATE_OneParam(FItemStatusChangedSignature, FItemInstance* Item);
+DECLARE_DELEGATE_RetVal_OneParam(bool, FTryChangeEquipItemStatusSignature, FItemInstance* Instance);
+DECLARE_DELEGATE_TwoParams(FOnNewItemAddedSignature, const FItemInstance* Instance, const FGridInfo& GridInfo);
+DECLARE_DELEGATE_OneParam(FItemStatusChangedByIDSignature, const FGuid& ItemID);
+DECLARE_DELEGATE_OneParam(FItemStatusChangedByInstanceSignature, FItemInstance* Instance);
 DECLARE_DELEGATE_OneParam(FOnItemEquippedSignature, const FGameplayTag& EquipType);
 
 
@@ -46,7 +47,7 @@ public:
 	UGSInventoryComponent();
 	static UGSInventoryComponent* FindInventoryComponent(AActor* Actor);
 
-	/* Inventory interface */
+	/* Inventory helper interface */
 	virtual void AddItemOnFloor(UGSItemComponent* ItemComponent) override;
 	virtual void RemoveItemOnFloor(UGSItemComponent* ItemComponent) override;
 	/***/
@@ -57,18 +58,23 @@ public:
 	
 	void TryAddItem();
     bool TryActivateItemAction(const FGuid& ItemID);
+
+	void TryAddToItemStack(const FGuid& ItemIDTo, const FGuid& ItemIDFrom);
+	bool CheckIfCanAddToStack(const FGuid& ItemIDTo, const FGuid& ItemIDFrom);
 	
 	bool TryEquipItem(FItemInstance* Item); 
 	bool TryEquipItem(const FGuid& ItemID); 
 	void UnequipItem(const FGuid& ItemID);
+
+	void DiscardItemInstance(const FGuid& ItemID);
 	
 	FTryChangeEquipItemStatusSignature TryEquipItemDelegate;
 	
 	FOnNewItemAddedSignature OnItemInstanceAddedDelegate;
 	
-	FItemStatusChangedSignature OnItemInstanceRemovedDelegate;
-	FItemStatusChangedSignature OnItemInstanceChangedDelegate;
-	FItemStatusChangedSignature UnequipItemDelegate;
+	FItemStatusChangedByIDSignature OnItemInstanceRemovedDelegate;
+	FItemStatusChangedByInstanceSignature OnItemInstanceChangedDelegate;
+	FItemStatusChangedByInstanceSignature UnequipItemDelegate;
 	
 	FOnItemEquippedSignature OnItemEquippedDelegate;
 	
@@ -79,12 +85,17 @@ protected:
 	int32 MaxStackSize = 100;
 	
 private:	
-	bool TryAddItemToStack(FItemDefinition& Def) ;
+	bool TryAddNewItemToStack(FItemDefinition& Def) ;
 	bool TryAddNewItem(FItemDefinition& Def);
+	void RemoveItemInstance(FItemInstance* Item);
+	void RemoveItemInstance(const FGuid& ItemID);
+	void SpawnWorldItemActor(FItemDefinition&& MovedItemDef, const UObject* WorldContextObject, const FVector& SpawnLocation);
+	
+	int32 HandleStackChange(FItemInstance* Instance, int32 ChangeNum);
 	
 	TInstancedStruct<FItemInstance> CreateItemInstance(FItemDefinition& Def);
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY()
 	TArray<TInstancedStruct<FItemInstance>> ItemsInstances;
 	
 	TWeakObjectPtr<AGSPlayerCharacterBase> OwningCharacter;

@@ -39,6 +39,7 @@ public:
 protected:
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	
 	UFUNCTION(BlueprintCallable)
 	void RegisterInventoryGrid(UGSInventoryGrid* NewInventoryGrid);
@@ -50,7 +51,7 @@ protected:
 	
 private:
 	/** Adds new GridItem into the appropriate grid. */
-	void AddGridItem(const FItemInstance& Item, const FGridInfo& GridInfo);
+	void AddGridItem(const FItemInstance* Item, const FGridInfo& GridInfo);
 
 	/**
 	 * Relocates a GridItem to a new position.
@@ -100,4 +101,6 @@ private:
 	TMap<int32, UGSInventoryGrid*> InventoryGrids;	
 	UPROPERTY()
 	TMap<FGameplayTag, UGSGridSlot*> EquipSlots;
+
+	TWeakObjectPtr<UGSInventoryMenuWidgetController> CachedInventoryController; 
 };

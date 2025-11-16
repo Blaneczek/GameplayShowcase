@@ -34,20 +34,15 @@ void UGSEquipmentComponent::BeginPlay()
 
 void UGSEquipmentComponent::InitInventoryComponent()
 {
-	if (InventoryComponent.IsValid())
+	if (UGSInventoryComponent* InvComponent = InventoryComponent.Get())
 	{
-		InventoryComponent.Get()->TryEquipItemDelegate.BindUObject(this, &UGSEquipmentComponent::TryEquipItem);
-		InventoryComponent.Get()->UnequipItemDelegate.BindUObject(this, &UGSEquipmentComponent::UnequipItem);
+		InvComponent->TryEquipItemDelegate.BindUObject(this, &UGSEquipmentComponent::TryEquipItem);
+		InvComponent->UnequipItemDelegate.BindUObject(this, &UGSEquipmentComponent::UnequipItem);
 	}
 }
 
 bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 {
-	if (!EquippedItem)
-	{
-		return false;
-	}
-	
 	FItemDefinition& ItemDefinition = EquippedItem->GetItemDefinitionMutable();
 	if (!CheckIfCanEquipItem(ItemDefinition))
 	{
@@ -57,8 +52,10 @@ bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.GetFragmentByTypeMutable<FEquipmentFragment>())
 	{
 		EquipmentFragment->OnEquip(OwningCharacter.Get());
-        AGSEquipItemActor* SpawnedActor = SpawnEquippedActor(EquipmentFragment);
-        EquippedActors.Add(ItemDefinition.Type.RequestDirectParent(), SpawnedActor);
+		// SpawnEquippedActor can return nullptr, it means that equipped item doesn't have in word representation,
+		// but we need to add it to EquippedActors to check later if this type of item is equipped.
+		AGSEquipItemActor* SpawnedActor = SpawnEquippedActor(EquipmentFragment);
+		EquippedActors.Add(ItemDefinition.Type.RequestDirectParent(), SpawnedActor);
 		return true;
 	}
 	return false;
@@ -86,11 +83,6 @@ bool UGSEquipmentComponent::CheckIfCanEquipItem(const FItemDefinition& ItemDefin
 
 void UGSEquipmentComponent::UnequipItem(FItemInstance* UnequippedItem)
 {
-	if (!UnequippedItem)
-	{
-		return;
-	}
-	
 	FItemDefinition& ItemDefinition = UnequippedItem->GetItemDefinitionMutable();
 	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.GetFragmentByTypeMutable<FEquipmentFragment>())
 	{
@@ -109,7 +101,6 @@ AGSEquipItemActor* UGSEquipmentComponent::SpawnEquippedActor(FEquipmentFragment*
 
 void UGSEquipmentComponent::RemoveEquippedActor(const FGameplayTag& EquipType, FEquipmentFragment* EquipmentFragment)
 {
-	UE_LOG(LogTemp, Warning, TEXT("TEXT"));
 	EquippedActors.Remove(EquipType);
 	EquipmentFragment->DestroyEquippedActor();
 }

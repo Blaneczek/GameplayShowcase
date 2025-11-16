@@ -5,8 +5,10 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
-#include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
+#include "GSBlueprintFunctionLibrary.h"
+#include "Systems/Inventory/Items/GSItemTags.h"
 #include "UI/Widgets/Inventory/GSGridItem.h"
+#include "UI/Widgets/Inventory/GSGridItemProxy.h"
 #include "UI/Widgets/Inventory/GSGridSlot.h"
 #include "UI/Widgets/Inventory/GSInventoryGrid.h"
 
@@ -15,8 +17,9 @@ void UGSInventoryMenuWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if ( UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+	if (UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
 	{
+		CachedInventoryController = InvController;
 		InvController->CreateNewItemDelegate.BindUObject(this, &UGSInventoryMenuWidget::AddGridItem);
 		InvController->FindNewSpaceDelegate.BindUObject(this, &UGSInventoryMenuWidget::FindFreeSpaceForItem);
 		InvController->RelocateGridItemDelegate.BindUObject(this, &UGSInventoryMenuWidget::RelocateGridItem);
@@ -42,6 +45,16 @@ bool UGSInventoryMenuWidget::FindFreeSpaceForItem(const FItemSize& ItemSize, FGr
 
 FReply UGSInventoryMenuWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
+	if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
+	{
+		InvController->RemoveActiveGridItemProxy();
+	}
+	return FReply::Handled();
+}
+
+FReply UGSInventoryMenuWidget::NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry,
+	const FPointerEvent& InMouseEvent)
+{
 	return FReply::Handled();
 }
 
@@ -63,7 +76,7 @@ void UGSInventoryMenuWidget::RegisterEquipGridSlots(TMap<FGameplayTag, UGSGridSl
 	EquipSlots = InEquipSlots;
 }
 
-void UGSInventoryMenuWidget::AddGridItem(const FItemInstance& Item, const FGridInfo& GridInfo)
+void UGSInventoryMenuWidget::AddGridItem(const FItemInstance* Item, const FGridInfo& GridInfo)
 {
 	if (UGSInventoryGrid* Grid = *InventoryGrids.Find(GridInfo.InventoryGridIndex))
 	{
@@ -107,11 +120,23 @@ bool UGSInventoryMenuWidget::CanEquipItem(const FGameplayTag& ItemType, UGSGridS
 {
 	if (const FGameplayTag* SlotTag = EquipSlots.FindKey(ClickedSlot))
 	{
-		if (SlotTag->RequestDirectParent().MatchesTagExact(ItemType.RequestDirectParent()))
-		{
-			OutEquipSlot = *EquipSlots.Find(ItemType);
-			return true;
+		if (ItemType.MatchesTag(GSItemTags::Type::Armor.GetTag()))
+		{		
+			if (SlotTag->RequestDirectParent().MatchesTagExact(ItemType.RequestDirectParent()))
+			{
+				EquipSlots.Contains(GSItemTags::Type::Armor_00.GetTag())
+				? OutEquipSlot = *EquipSlots.Find(GSItemTags::Type::Armor_00.GetTag()) : OutEquipSlot = nullptr;
+				return true;
+			}
 		}
+		else
+		{
+			if (SlotTag->MatchesTag(ItemType.RequestDirectParent()))
+            {
+            	EquipSlots.Contains(ItemType) ? OutEquipSlot = *EquipSlots.Find(ItemType) : OutEquipSlot = nullptr;
+            	return true;
+            }
+		}	
 	}
 	return false;
 }
@@ -143,8 +168,8 @@ void UGSInventoryMenuWidget::EquipGridItem(UGSGridItem* GridItem, UGSGridSlot* E
 	if (UGSInventoryGrid* Grid = *InventoryGrids.Find(GridItem->GetInventoryGridIndex()))
 	{
 		GridItem->bIsEquipped = true;
-		EquipSlot->SetOccupancyStatus(true);
-		Grid->RemoveGridItem(GridItem);
+		EquipSlot->SetOccupancyStatus(true, GridItem);
+		Grid->RemoveGridItemTemporary(GridItem);
 		
 		UCanvasPanelSlot* CanvasItemSlot = EquipmentPanel->AddChildToCanvas(GridItem);
 		const UCanvasPanelSlot* CanvasEquipSlot = UWidgetLayoutLibrary::SlotAsCanvasSlot(EquipSlot);
@@ -157,5 +182,9 @@ void UGSInventoryMenuWidget::EquipGridItem(UGSGridItem* GridItem, UGSGridSlot* E
 
 UGSGridSlot* UGSInventoryMenuWidget::FindEquipGridSlot(const FGameplayTag& EquipType)
 {
-	return *EquipSlots.Find(EquipType);
+	if (EquipType.RequestDirectParent().MatchesTagExact(GSItemTags::Type::Armor.GetTag()))
+	{
+		return  EquipSlots.Contains(GSItemTags::Type::Armor_00) ? *EquipSlots.Find(GSItemTags::Type::Armor_00) : nullptr;
+	}
+	return  EquipSlots.Contains(EquipType) ? *EquipSlots.Find(EquipType) : nullptr;
 }

@@ -94,6 +94,10 @@ void UGSCharacterMenuWidgetController::SpendAttributePoint(const FGameplayTag& A
 	
 	if (const UGSAttributeSetPlayer* AS = Cast<UGSAttributeSetPlayer>(AttributeSet))
 	{
+		if (!AS->TagsToSingleAttributes.Contains(AttributeTag))
+		{
+			return;
+		}
 		if (const auto FuncPtr = AS->TagsToSingleAttributes.Find(AttributeTag); AbilitySystemComponent)
 		{
 			AbilitySystemComponent->ApplyModToAttribute((*FuncPtr)(), EGameplayModOp::AddFinal, 1.f);

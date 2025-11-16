@@ -7,6 +7,7 @@
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
 #include "GSGridItemProxy.generated.h"
 
+class UGSInventoryMenuWidgetController;
 class UGSGridItem;
 class UCanvasPanel;
 class UCanvasPanelSlot;
@@ -53,6 +54,8 @@ private:
 	/** Enables drag behavior and positions the widget under the cursor. */
 	void InitDragging();
 
+	bool DiscardItem();
+	
 	/** Size of Overlay canvas panel. */
 	FVector2D CanvasSize = FVector2D::ZeroVector;
 
@@ -70,8 +73,10 @@ private:
 	TObjectPtr<UCanvasPanelSlot> CanvasSlot;
 
 	/** Overlay canvas panel reference. */
-	TWeakObjectPtr<UCanvasPanel> CanvasPanel;
-	
+	TWeakObjectPtr<UCanvasPanel> CachedMainCanvasPanel;
+
+	TWeakObjectPtr<UGSInventoryMenuWidgetController> CachedInventoryController;
+
 	/** GridItem reference this proxy represents. */
 	TWeakObjectPtr<UGSGridItem> GridItemRef;
 

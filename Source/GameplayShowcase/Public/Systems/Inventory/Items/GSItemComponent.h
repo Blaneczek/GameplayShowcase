@@ -10,6 +10,8 @@
 class UGSItemDataSubsystem;
 class UGSItemsInfo;
 
+DECLARE_DELEGATE(FOnItemDefinitionSet);
+
 /**
  * 
  * 
@@ -28,6 +30,12 @@ public:
 
 	FORCEINLINE const FItemDefinition& GetItemDefinitionRef() const { return ItemDefinition; }
 	FORCEINLINE FItemDefinition& GetItemDefinitionRefMutable() { return ItemDefinition; }
+
+	void MoveItemDefinition(FItemDefinition&& Def);
+
+	FOnItemDefinitionSet OnItemDefinitionSet;
+	
+	bool bSpawnedFirstTime = true;
 	
 protected:
 	virtual void BeginPlay() override;

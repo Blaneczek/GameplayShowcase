@@ -9,6 +9,7 @@
 #include "UI/Widgets/GSWidgetBase.h"
 #include "GSGridItem.generated.h"
 
+class UCanvasPanel;
 class UGSInventoryMenuWidgetController;
 class UCanvasPanelSlot;
 class UGSGridItemProxy;
@@ -16,6 +17,7 @@ class UGSDragWidget;
 class UImage;
 struct FItemDefinition;
 
+DECLARE_DELEGATE_OneParam(FOnGridItemRemoved, UGSGridItem* GridItem);
 
 /**
  * Represents an inventory item displayed in a grid within the inventory UI.
@@ -35,7 +37,7 @@ public:
 	 * @param inSlotSize				size of a single grid slot (UI units).
 	 * @param Positions				array of grid positions occupied by this GridItem.
 	 */
-	void ConstructGridItem(int32 InInventoryGridIndex, const FItemInstance& Item, float inSlotSize, const TArray<FGridPosition>& Positions);
+	void ConstructGridItem(int32 InInventoryGridIndex, const FItemInstance* Item, float inSlotSize, const TArray<FGridPosition>& Positions);
 
 	/** Returns the GridItem’s size in grid units (rows x columns). */
 	FORCEINLINE FItemSize GetGridItemSize() const { return GridItemSize; }
@@ -67,6 +69,8 @@ public:
 	/** Returns the Inventory grid index this item belongs to. */
 	FORCEINLINE int32 GetInventoryGridIndex() const { return InventoryGridIndex; }
 
+	void UpdateStackCount(const FGuid& InstanceID, int32 NewStackCount);
+	
 	/** Removes and cleans up the drag proxy widget (if active). */
 	void RemoveProxy();
 
@@ -74,11 +78,18 @@ public:
 	void ResetGridPositions();
 	
 	bool bIsEquipped = false;
+
+	FOnGridItemRemoved OnGridItemRemoved;
 	
 protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseMove(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+		
 private:
+	void InitItemTooltip(const FItemInstance* Item);
 	void BindToInventoryController();
 	
 	/** Sets GridItem size in grid units (rows x columns). */
@@ -88,9 +99,14 @@ private:
 	
 	/** Spawns a UGSGridItemProxy widget and attaches it to the overlay canvas panel. */
 	void CreateItemProxy();
+
+	void SetToRemove(const FGuid& InstanceID);
 	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> ItemIcon;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UTextBlock> StackCountText;
 
 	/** Alternative icon texture used when the primary item icon is missing or invalid. */
 	UPROPERTY(EditDefaultsOnly)
@@ -99,17 +115,27 @@ private:
 	/** Currently active instance of the draggable item proxy. */
 	UPROPERTY()
     TObjectPtr<UGSGridItemProxy> ItemProxy;
-	
 	UPROPERTY(EditDefaultsOnly)
     TSubclassOf<UGSGridItemProxy> ItemProxyClass;	
+
+	/** Tooltip of this item to display when hovering GridItem. */
+	UPROPERTY()
+	TObjectPtr<UGSItemTooltip> ItemTooltip;
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UGSItemTooltip> ItemTooltipClass;
 	
 	UPROPERTY()
 	TObjectPtr<UCanvasPanelSlot> CanvasSlotRef;
+	UPROPERTY()
+	TObjectPtr<UCanvasPanelSlot> TooltipCanvasSlotRef;
 
 	/** Array of grid coordinates occupied by this GridItem. */
 	TArray<FGridPosition> GridPositions;
 
 	TWeakObjectPtr<UGSInventoryMenuWidgetController> CachedInventoryController;
+	
+	/** Overlay canvas panel reference. */
+	TWeakObjectPtr<UCanvasPanel> CachedMainCanvasPanel;
 
 	/** Unique ID of the item instance represented by this GridItem. */
 	FGuid ItemID;
@@ -119,6 +145,8 @@ private:
 	
 	/** Stack count of the item instance represented by this GridItem. */
 	int32 StackCount;
+
+	FVector2D MainCanvasSize;
 	
 	float SlotSize = 0.f;
 	int32 InventoryGridIndex;

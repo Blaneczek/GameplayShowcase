@@ -5,6 +5,5 @@
 
 FReply UGSCharacterMenuWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	OnWidgetClicked.Broadcast(InMouseEvent);
 	return FReply::Handled();
 }

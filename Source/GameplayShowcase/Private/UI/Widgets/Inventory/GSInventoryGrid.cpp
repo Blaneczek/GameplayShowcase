@@ -2,6 +2,8 @@
 
 
 #include "UI/Widgets/Inventory/GSInventoryGrid.h"
+
+#include "GSBlueprintFunctionLibrary.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
@@ -16,6 +18,13 @@ void UGSInventoryGrid::NativePreConstruct()
 	ConstructGrid();
 }
 
+void UGSInventoryGrid::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	CachedInventoryController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this);
+}
+
 void UGSInventoryGrid::ConstructGrid()
 {
 	if (!GridSlotClass)
@@ -24,7 +33,6 @@ void UGSInventoryGrid::ConstructGrid()
 	}
 	
 	GridSlots.Reserve(RowsNum * ColumnsNum);
-
 	for (int32 i = 0; i < RowsNum; ++i)
 	{
 		for (int32 j = 0; j < ColumnsNum; ++j)
@@ -46,7 +54,7 @@ void UGSInventoryGrid::ConstructGrid()
 	}
 }
 
-void UGSInventoryGrid::AddNewGridItem(const FItemInstance& Item, const TArray<FGridPosition>& Positions)
+void UGSInventoryGrid::AddNewGridItem(const FItemInstance* Item, const TArray<FGridPosition>& Positions)
 {
 	if (!GridItemClass)
 	{
@@ -55,12 +63,13 @@ void UGSInventoryGrid::AddNewGridItem(const FItemInstance& Item, const TArray<FG
 	
 	if (UGSGridItem* GridItem = CreateWidget<UGSGridItem>(this, GridItemClass))
 	{
+		GridItem->OnGridItemRemoved.BindUObject(this, &UGSInventoryGrid::RemoveGridItemPermanently);
 		GridItem->ConstructGridItem(InventoryGridIndex, Item, SlotSize, Positions);
 		UCanvasPanelSlot* CanvasSlot = GridPanel->AddChildToCanvas(GridItem);
 		CanvasSlot->SetPosition(FVector2D(Positions[0].ColumnsIndex * SlotSize, Positions[0].RowsIndex * SlotSize));
 		CanvasSlot->SetSize(FVector2D(SlotSize * GridItem->GetGridItemSize().ColumnSize, SlotSize * GridItem->GetGridItemSize().RowSize));
 		GridItem->SetCanvasSlot(CanvasSlot);
-		SetSlotsOccupancy(Positions, true);
+		SetSlotsOccupancy(Positions, true, GridItem);
 
 		GridItems.Add(GridItem);
 	}			
@@ -90,7 +99,7 @@ bool UGSInventoryGrid::FindFreeSpaceForItem(const FItemSize& ItemSize, FGridInfo
 void UGSInventoryGrid::RelocateGridItem(UGSGridItem* GridItem, TArray<FGridPosition>&& Positions)
 {
 	GridItem->ResetGridPositions();
-	SetSlotsOccupancy(Positions, true);
+	SetSlotsOccupancy(Positions, true, GridItem);
 	
 	const FGridPosition FirstPosition = GetFirstGridPosition(Positions);
 	GridItem->GetCanvasSlot()->SetPosition(FVector2D(FirstPosition.ColumnsIndex * SlotSize, FirstPosition.RowsIndex * SlotSize));
@@ -98,7 +107,7 @@ void UGSInventoryGrid::RelocateGridItem(UGSGridItem* GridItem, TArray<FGridPosit
 	GridItem->SetGridPositions(MoveTemp(Positions));	
 }
 
-void UGSInventoryGrid::SetSlotsOccupancy(const TArray<FGridPosition>& Positions, bool bOccupied)
+void UGSInventoryGrid::SetSlotsOccupancy(const TArray<FGridPosition>& Positions, bool bOccupied, UGSGridItem* OccupyingGridItem)
 {
 	if (Positions.IsEmpty())
 	{
@@ -109,7 +118,7 @@ void UGSInventoryGrid::SetSlotsOccupancy(const TArray<FGridPosition>& Positions,
 	{
 		if (UGSGridSlot* GridSlot = GetGridSlotAtPosition(Position.RowsIndex, Position.ColumnsIndex))
 		{
-			GridSlot->SetOccupancyStatus(bOccupied);
+			GridSlot->SetOccupancyStatus(bOccupied, OccupyingGridItem);
 		}
 	}
 }
@@ -159,6 +168,8 @@ void UGSInventoryGrid::SetProxyPositionsStatus(const FGridPosition& Position, co
 	TArray<UGSGridSlot*> Slots;	
 	Slots.Reserve(ProxySize.RowSize * ProxySize.ColumnSize);
 	ProxyPositions.Reset(ProxySize.RowSize * ProxySize.ColumnSize);
+
+	const bool bCanAddToStack = CheckIfCanAddToStack(Position);
 	
 	bool bIsRelocationAllowed = true;
 	for (int32 i = 0; i < ProxySize.RowSize; ++i)
@@ -167,12 +178,12 @@ void UGSInventoryGrid::SetProxyPositionsStatus(const FGridPosition& Position, co
 		{
 			const int32 RowPosition = Position.RowsIndex + i < RowsNum ? Position.RowsIndex + i : Position.RowsIndex + i - 2;
 			const int32 ColumnPosition = Position.ColumnsIndex + j < ColumnsNum ? Position.ColumnsIndex + j : Position.ColumnsIndex + j - 2;
-			if (UGSGridSlot* GridSlot = GetGridSlotAtPosition(RowPosition, ColumnPosition ))
+			if (UGSGridSlot* GridSlot = GetGridSlotAtPosition(RowPosition, ColumnPosition))
 			{
 				ProxyPositions.Add(FGridPosition(RowPosition, ColumnPosition));
 				if (GridSlot->IsOccupied())
 				{
-					bIsRelocationAllowed = false;
+					bIsRelocationAllowed = bCanAddToStack;
 				}
 				Slots.Add(GridSlot);
 			}
@@ -181,7 +192,7 @@ void UGSInventoryGrid::SetProxyPositionsStatus(const FGridPosition& Position, co
 
 	for (const auto GridSlot : Slots)
 	{
-		GridSlot->SetRelocationStatus(bIsRelocationAllowed);
+		GridSlot->SetRelocationStatus(bIsRelocationAllowed, bCanAddToStack);
 	}
 }
 
@@ -206,11 +217,41 @@ FGridPosition UGSInventoryGrid::GetFirstGridPosition(const TArray<FGridPosition>
 	return *Position;
 }
 
-void UGSInventoryGrid::RemoveGridItem(UGSGridItem* GridItem)
+bool UGSInventoryGrid::CheckIfCanAddToStack(const FGridPosition& Position)
+{
+	const UGSGridSlot* GridSlot = GetGridSlotAtPosition(Position.RowsIndex, Position.ColumnsIndex);
+	if (!GridSlot)
+	{
+		return false;
+	}
+
+	if (!GridSlot->IsOccupied())
+	{
+		return false;
+	}
+	if (const UGSGridItem* GridItem = GridSlot->GetOccupyingGridItem())
+	{
+		if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
+		{
+			return InvController->CheckIfCanAddToStack(GridItem->GetItemID());
+		}
+	}
+	return false;
+}
+
+void UGSInventoryGrid::RemoveGridItemTemporary(UGSGridItem* GridItem)
 {
 	SetSlotsOccupancy(GridItem->GetGridPositions(), false);
 	GridPanel->RemoveChild(GridItem);
 	GridItems.Remove(GridItem);
+}
+
+void UGSInventoryGrid::RemoveGridItemPermanently(UGSGridItem* GridItem)
+{
+	SetSlotsOccupancy(GridItem->GetGridPositions(), false);
+	GridPanel->RemoveChild(GridItem);
+	GridItems.Remove(GridItem);
+	GridItem->RemoveFromParent();
 }
 
 

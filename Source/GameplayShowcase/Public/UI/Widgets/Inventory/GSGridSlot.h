@@ -8,6 +8,8 @@
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
 #include "GSGridSlot.generated.h"
 
+class UGSGridItem;
+class UGSInventoryMenuWidgetController;
 class UBorder;
 
 DECLARE_DELEGATE_TwoParams(FCheckAllGridItemPositionsSignature, const FGridPosition& Position, const FItemSize& inProxySize);
@@ -25,11 +27,13 @@ class GAMEPLAYSHOWCASE_API UGSGridSlot : public UUserWidget
 
 public:
 	/** Sets the current occupancy state of this slot. */
-	FORCEINLINE void SetOccupancyStatus(bool bIsOccupied);
+	FORCEINLINE void SetOccupancyStatus(bool bIsOccupied, UGSGridItem* OccupyingGridItem);
 	
 	/** Returns true if there is currently a GridItem on this slot. */
 	FORCEINLINE bool IsOccupied() const { return bOccupied; };
 
+	FORCEINLINE UGSGridItem* GetOccupyingGridItem() const { return OccupyingGridItemRef.Get(); }
+	
 	/** Returns this slot's grid position coordinates. */
 	FORCEINLINE FGridPosition GetPosition() const { return Position; };
 
@@ -56,8 +60,9 @@ public:
 	 * when the GridItem proxy hovers over this slot.
 	 *
 	 * @param bCanRelocateItem	true if GridItem can be placed here.
+	 * @param InCanAddToStack   true if this slot is occupied by Item to which a stack can be added.
 	 */
-	void SetRelocationStatus(bool bCanRelocateItem);
+	void SetRelocationStatus(bool bCanRelocateItem, bool InCanAddToStack);
 
 	/** Resets this slot’s visual color to default state. */
 	void ClearSlot();
@@ -82,10 +87,14 @@ protected:
 	FLinearColor RelocationAllowedColor = FLinearColor::White;
 
 	bool bItemProxyExists = false;
+
+	TWeakObjectPtr<UGSInventoryMenuWidgetController> CachedInventoryController;
 	
 private:	
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UBorder> GridSlot;
+
+	TWeakObjectPtr<UGSGridItem> OccupyingGridItemRef;
 	
 	FGridPosition Position;
 	FItemSize ProxySize;
@@ -93,4 +102,5 @@ private:
 	
 	bool bOccupied = false;
 	bool bRelocationAllowed = false;
+	bool bCanAddToStack = false;
 };

@@ -16,6 +16,11 @@ class GAMEPLAYSHOWCASE_API AGSEquipItemActor : public AActor
 public:
 	AGSEquipItemActor();
 
+	void SetEquipMesh(UStaticMesh* Mesh);
+	
 protected:
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> EquipMesh; 
 };

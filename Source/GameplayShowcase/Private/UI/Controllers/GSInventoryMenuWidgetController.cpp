@@ -2,6 +2,8 @@
 
 
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
+
+#include "IDetailTreeNode.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Inventory/Items/Fragments/GSFragmentTags.h"
 #include "UI/Widgets/Inventory/GSGridItem.h"
@@ -17,9 +19,17 @@ void UGSInventoryMenuWidgetController::BindCallbacksToDependencies()
 	InventoryComponent = UGSInventoryComponent::FindInventoryComponent(Character);
 	if (UGSInventoryComponent* InvComponent = InventoryComponent.Get())
 	{
-		InvComponent->OnItemInstanceAddedDelegate.BindLambda([this](const FItemInstance& Item, const FGridInfo& GridInfo)
+		InvComponent->OnItemInstanceAddedDelegate.BindLambda([this](const FItemInstance* Item, const FGridInfo& GridInfo)
 		{
 			CreateNewItemDelegate.ExecuteIfBound(Item, GridInfo);
+		});
+		InvComponent->OnItemInstanceChangedDelegate.BindLambda([this](FItemInstance* Item)
+		{
+			OnStackCountChanged.Broadcast(Item->GetInstanceID(), Item->GetStackCount());
+		});
+		InvComponent->OnItemInstanceRemovedDelegate.BindLambda([this](const FGuid& ItemID)
+		{
+			OnItemRemoved.Broadcast(ItemID);
 		});
 		InvComponent->OnItemEquippedDelegate.BindUObject(this, &UGSInventoryMenuWidgetController::EquipGridItem);
 	}
@@ -34,14 +44,15 @@ bool UGSInventoryMenuWidgetController::TryFindFreeSpace(const FItemSize& ItemSiz
 	return false;
 }
 
-void UGSInventoryMenuWidgetController::CallOnGridItemProxyStatusChanged(bool bProxyExists, const FItemSize& ProxySize)
+void UGSInventoryMenuWidgetController::CallOnGridItemProxyStatusChanged(bool InProxyExists, const FItemSize& ProxySize)
 {
+	bProxyExists = InProxyExists;
 	OnItemProxyStatusChanged.Broadcast(bProxyExists, ProxySize);
 }
 
 void UGSInventoryMenuWidgetController::RelocateGridItem(int32 InventoryGridIndex)
 {
-	UGSGridItem* GridItem = GridItemRef.Get();	
+	UGSGridItem* GridItem = ClickedGridItemRef.Get();	
 	UGSInventoryComponent* InvComponent = InventoryComponent.Get();
 	if (!GridItem || !InvComponent)
 	{
@@ -58,7 +69,7 @@ void UGSInventoryMenuWidgetController::RelocateGridItem(int32 InventoryGridIndex
 
 void UGSInventoryMenuWidgetController::SetGridItemRef(UGSGridItem* GridItem)
 {
-	GridItemRef = GridItem;
+	ClickedGridItemRef = GridItem;
 }
 
 void UGSInventoryMenuWidgetController::TryActivateItemAction(const FGuid& ItemID)
@@ -71,7 +82,7 @@ void UGSInventoryMenuWidgetController::TryActivateItemAction(const FGuid& ItemID
 
 void UGSInventoryMenuWidgetController::TryEquipGridItem(UGSGridSlot* ClickedSlot)
 {
-	UGSGridItem* GridItem = GridItemRef.Get();	
+	UGSGridItem* GridItem = ClickedGridItemRef.Get();	
 	UGSInventoryComponent* InvComponent = InventoryComponent.Get();
 	if (!GridItem || !InvComponent || !CanEquipGridItemDelegate.IsBound())
 	{
@@ -83,14 +94,14 @@ void UGSInventoryMenuWidgetController::TryEquipGridItem(UGSGridSlot* ClickedSlot
 	{
 		if (InvComponent->TryEquipItem(GridItem->GetItemID()))
 		{
-			EquipGridItem(EquipSlot);
+			EquipGridItem(GridItem, EquipSlot);
 		}
 	}
 }
 
 void UGSInventoryMenuWidgetController::TryUnequipGridItem()
 {
-	UGSGridItem* GridItem = GridItemRef.Get();	
+	UGSGridItem* GridItem = ClickedGridItemRef.Get();	
 	UGSInventoryComponent* InvComponent = InventoryComponent.Get();
 	if (!GridItem || !InvComponent || !TryUnequipGridItemDelegate.IsBound())
 	{
@@ -105,15 +116,59 @@ void UGSInventoryMenuWidgetController::TryUnequipGridItem()
 
 void UGSInventoryMenuWidgetController::EquipGridItem(const FGameplayTag& EquipType)
 {
-	if (FindNewSpaceDelegate.IsBound())
+	if (FindEquipGridSlotDelegate.IsBound())
 	{
 		UGSGridSlot* EquipSlot = FindEquipGridSlotDelegate.Execute(EquipType);
-		EquipGridItemDelegate.ExecuteIfBound(GridItemRef.Get(), EquipSlot);
+		EquipGridItemDelegate.ExecuteIfBound(ClickedGridItemRef.Get(), EquipSlot);
 	}	
 }
 
-void UGSInventoryMenuWidgetController::EquipGridItem(UGSGridSlot* EquipSlot)
+void UGSInventoryMenuWidgetController::EquipGridItem(UGSGridItem* GridItem, UGSGridSlot* EquipSlot)
 {
-	EquipGridItemDelegate.ExecuteIfBound(GridItemRef.Get(), EquipSlot);
-	GridItemRef.Get()->RemoveProxy();
+	EquipGridItemDelegate.ExecuteIfBound(GridItem, EquipSlot);
+	GridItem->RemoveProxy();
+}
+
+void UGSInventoryMenuWidgetController::RemoveActiveGridItemProxy()
+{
+	if (UGSGridItem* GridItem = ClickedGridItemRef.Get())
+	{
+		GridItem->RemoveProxy();
+	}
+}
+
+void UGSInventoryMenuWidgetController::DiscardItem()
+{
+	const UGSGridItem* GridItem = ClickedGridItemRef.Get();	
+	UGSInventoryComponent* InvComponent = InventoryComponent.Get();
+	if (!GridItem || !InvComponent)
+	{
+		return;
+	}
+	
+	InvComponent->DiscardItemInstance(GridItem->GetItemID());
+}
+
+void UGSInventoryMenuWidgetController::TryAddToStack(const FGuid& ItemIDToAdd)
+{
+	UGSGridItem* GridItem = ClickedGridItemRef.Get();
+	UGSInventoryComponent* InvComponent = InventoryComponent.Get();
+	if (!GridItem || !InvComponent)
+	{
+		return;
+	}
+	GridItem->RemoveProxy();
+	InvComponent->TryAddToItemStack(ItemIDToAdd, GridItem->GetItemID());
+}
+
+bool UGSInventoryMenuWidgetController::CheckIfCanAddToStack(const FGuid& ItemIDToAdd)
+{
+	const UGSGridItem* GridItem = ClickedGridItemRef.Get();
+	UGSInventoryComponent* InvComponent = InventoryComponent.Get();
+	if (!GridItem || !InvComponent)
+	{
+		return false;
+	}
+
+	return InvComponent->CheckIfCanAddToStack(ItemIDToAdd, GridItem->GetItemID());
 }

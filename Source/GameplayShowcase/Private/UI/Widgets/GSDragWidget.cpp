@@ -3,13 +3,11 @@
 
 #include "UI/Widgets/GSDragWidget.h"
 
+#include "GSBlueprintFunctionLibrary.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
-#include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
-#include "UI/Controllers/GSOverlayWidgetController.h"
-
 
 FReply UGSDragWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
@@ -92,10 +90,7 @@ void UGSDragWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (const UGSOverlayWidgetController* Controller = UGSBlueprintFunctionLibrary::GetOverlayWidgetController(this))
-	{
-		MainCanvasRef = Controller->CanvasRef;
-	}
+	MainCanvasRef = UGSBlueprintFunctionLibrary::GetOverlayCanvasPanelRef(this);
 }
 
 void UGSDragWidget::CachePropertiesIfNeeded()

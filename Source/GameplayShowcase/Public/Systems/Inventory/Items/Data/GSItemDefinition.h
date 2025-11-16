@@ -7,7 +7,9 @@
 #include "StructUtils/InstancedStruct.h"
 #include "GSItemDefinition.generated.h"
 
+class UGSItemTooltip;
 struct FItemFragment;
+
 /**
  * 
  */
@@ -33,7 +35,16 @@ struct FItemDefinition
 	template<typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
 	const FragmentType* GetFragmentByType() const;
 
-	/** Unique name of this item. */
+	template <typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
+	TArray<FragmentType*> GetAllFragmentsByTypeMutable();
+
+	template <typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
+	TArray<const FragmentType*> GetAllFragmentsByType() const;
+
+	void AdaptItemNameToWidget(UGSItemTooltip* ItemTooltip) const;
+	void AdaptItemTypeToWidget(UGSItemTooltip* ItemTooltip) const;
+	
+	/** Name of this item. */
 	UPROPERTY(EditAnywhere)
 	FGameplayTag Name;
 
@@ -45,13 +56,16 @@ struct FItemDefinition
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<AActor> WorldActorClass = nullptr;
 
+	UPROPERTY(EditAnywhere)
+	TSoftObjectPtr<UStaticMesh> WorldItemMesh = nullptr;
+	
 	/** Fragments that describe this item’s behavior. */
-	UPROPERTY(EditAnywhere, meta=(ExludeBaseStruct))
+	UPROPERTY(EditAnywhere, meta=(ExcludeBaseStruct))
 	TArray<TInstancedStruct<FItemFragment>> Fragments;
 
 private:
 	/** Empties Fragments array. */
-	void ClearFragments();	
+	void ClearFragments();
 };
 
 template <typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
@@ -78,5 +92,35 @@ const FragmentType* FItemDefinition::GetFragmentByType() const
 		}
 	}	
 	return nullptr;
+}
+
+template <typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
+TArray<FragmentType*> FItemDefinition::GetAllFragmentsByTypeMutable()
+{
+	TArray<FragmentType*> OutFragments;
+	OutFragments.Reserve(Fragments.Num());
+	for (TInstancedStruct<FItemFragment>& Fragment : Fragments)
+	{
+		if (FragmentType* FragmentPtr = Fragment.GetMutablePtr<FragmentType>())
+		{
+			OutFragments.Add(FragmentPtr);
+		}
+	}	
+	return OutFragments;
+}
+
+template <typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
+TArray<const FragmentType*> FItemDefinition::GetAllFragmentsByType() const
+{
+	TArray<const FragmentType*> OutFragments;
+	OutFragments.Reserve(Fragments.Num());
+	for (const TInstancedStruct<FItemFragment>& Fragment : Fragments)
+	{		
+		if (const FragmentType* FragmentPtr = Fragment.GetPtr<FragmentType>())
+		{
+			OutFragments.Add(FragmentPtr);
+		}
+	}	
+	return OutFragments;
 }
 

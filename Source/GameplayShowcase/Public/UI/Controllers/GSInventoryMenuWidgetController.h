@@ -7,6 +7,7 @@
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "GSInventoryMenuWidgetController.generated.h"
 
+class UGSGridItemProxy;
 class UGSGridSlot;
 class UGSGridItem;
 struct FItemSize;
@@ -26,7 +27,7 @@ struct FGridInfo
 };
 
 // GridItem delegates
-DECLARE_DELEGATE_TwoParams(FCreateGridItemSignature, const FItemInstance& Item, const FGridInfo& GridInfo);
+DECLARE_DELEGATE_TwoParams(FCreateGridItemSignature, const FItemInstance* Item, const FGridInfo& GridInfo);
 DECLARE_DELEGATE_TwoParams(FRelocateGridItemSignature, UGSGridItem* GridItem, int32 InventoryGridIndex);
 
 // Equipping delegates
@@ -39,6 +40,9 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FTryUnequipGridItemSignature, UGSGridItem
 DECLARE_MULTICAST_DELEGATE_TwoParams(FItemProxyStatusChangedSignature, bool bProxyExists, const FItemSize& ProxySize);
 
 DECLARE_DELEGATE_RetVal_TwoParams(bool, FFindNewSpaceDelegate, const FItemSize& ItemSize, FGridInfo& OutGridInfo);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStackCountChangedSignature, const FGuid& InstanceID, int32 NewStackCount);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStackCountChangedSignature, const FGuid& InstanceID, int32 NewStackCount);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnItemRemovedSignature, const FGuid& InstanceID);
 
 
 /**
@@ -74,7 +78,7 @@ public:
     void TryEquipGridItem(UGSGridSlot* ClickedSlot);
 
 	/** Broadcast proxy existence to entire inventory UI (OnItemProxyStatusChanged). */
-	void CallOnGridItemProxyStatusChanged(bool bProxyExists, const FItemSize& ProxySize);
+	void CallOnGridItemProxyStatusChanged(bool InProxyExists, const FItemSize& ProxySize);
 
 	/** Relocate currently selected GridItem when moving manually (by proxy). */
 	void RelocateGridItem(int32 InventoryGridIndex);
@@ -89,8 +93,17 @@ public:
 	void EquipGridItem(const FGameplayTag& EquipType);
 
 	/** Equip current GridItem into a specific EquipSlot. */
-	void EquipGridItem(UGSGridSlot* EquipSlot);
+	void EquipGridItem(UGSGridItem* GridItem, UGSGridSlot* EquipSlot);
 
+	void RemoveActiveGridItemProxy();
+
+	void DiscardItem();
+
+	void TryAddToStack(const FGuid& ItemIDToAdd);
+	bool CheckIfCanAddToStack(const FGuid& ItemIDToAdd);
+	
+	FORCEINLINE bool IsProxyExists() const { return bProxyExists; };
+	
 	FCreateGridItemSignature CreateNewItemDelegate;
 	FRelocateGridItemSignature RelocateGridItemDelegate;
 
@@ -101,8 +114,13 @@ public:
 	
 	FFindNewSpaceDelegate FindNewSpaceDelegate;
 	FItemProxyStatusChangedSignature OnItemProxyStatusChanged;
-		
+
+	FOnStackCountChangedSignature OnStackCountChanged;
+	FOnItemRemovedSignature OnItemRemoved;
+	
 private:
 	TWeakObjectPtr<UGSInventoryComponent> InventoryComponent;
-	TWeakObjectPtr<UGSGridItem> GridItemRef;
+	TWeakObjectPtr<UGSGridItem> ClickedGridItemRef;
+
+	bool bProxyExists = false;
 };

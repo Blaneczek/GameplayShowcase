@@ -27,22 +27,25 @@ UGSItemComponent* UGSItemComponent::FindItemComponent(const AActor* Actor)
 	return Actor ? Actor->FindComponentByClass<UGSItemComponent>() : nullptr;
 }
 
+void UGSItemComponent::MoveItemDefinition(FItemDefinition&& Def)
+{
+	ItemDefinition = MoveTemp(Def);
+	OnItemDefinitionSet.ExecuteIfBound();
+}
+
 void UGSItemComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetCollisionObjectType(ECC_WorldDynamic);
-	SetCollisionResponseToAllChannels(ECR_Ignore);
-	SetCollisionResponseToChannel(ECC_PlayerChar, ECR_Overlap);
-	
 	CachedOwner = GetOwner();
-	//if (CachedOwner.IsValid())
-	//{
-		//PickUpZone->AttachToComponent(GetOwner()->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-        OnComponentBeginOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneEntered);
-        OnComponentEndOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneLeft);
-	//}
-		
+	
+    OnComponentBeginOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneEntered);
+    OnComponentEndOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneLeft);
+
+	if (!bSpawnedFirstTime)
+	{
+		return;
+	}
 	if (UGSItemDataSubsystem* ItemDataSubsystem = UGameplayStatics::GetGameInstance(this)->GetSubsystem<UGSItemDataSubsystem>())
 	{
 		// If data is already loaded, get item
@@ -65,6 +68,7 @@ void UGSItemComponent::SetItemDefinition(UGSItemDataSubsystem* ItemDataSubsystem
 			ItemDefinition = *Def;
 			ItemDataSubsystem->OnItemDataLoadedDelegate.RemoveAll(this);
 			bDefinitionSet = true;
+			OnItemDefinitionSet.ExecuteIfBound();
 		}
 	}
 }

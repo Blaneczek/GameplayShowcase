@@ -37,13 +37,16 @@ public:
 	FORCEINLINE int32 GetInventoryGridIndex () const { return InventoryGridIndex; }
 	
 	/** Adds a new GridItem to the grid and marks its occupied positions. */
-	void AddNewGridItem(const FItemInstance& Item, const TArray<FGridPosition>& Positions);
+	void AddNewGridItem(const FItemInstance* Item, const TArray<FGridPosition>& Positions);
 
 	/** Moves a GridItem to new grid positions, updating occupancy and canvas position. */
 	void RelocateGridItem(UGSGridItem* GridItem, TArray<FGridPosition>&& Positions);
 
-	/** Removes a GridItem form Inventory grid and frees its occupied slots. */
-	void RemoveGridItem(UGSGridItem* GridItem);
+	/** Removes a GridItem form Inventory grid and frees its occupied slots without deleting it. */
+	void RemoveGridItemTemporary(UGSGridItem* GridItem);
+
+	/** Removes a GridItem form Inventory grid, frees its occupied slots and deletes it. */
+	void RemoveGridItemPermanently(UGSGridItem* GridItem);
 
 	/** Finds a free space large enough to fit an item of given size.
 	 *
@@ -54,10 +57,11 @@ public:
 	bool FindFreeSpaceForItem(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
 
 	/** Sets occupancy flag for multiple grid positions. */
-	void SetSlotsOccupancy(const TArray<FGridPosition>& Positions, bool bOccupied);
+	void SetSlotsOccupancy(const TArray<FGridPosition>& Positions, bool bOccupied, UGSGridItem* OccupyingGridItem = nullptr);
 	
 protected:
 	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	TObjectPtr<UCanvasPanel> GridPanel;
@@ -84,6 +88,8 @@ private:
 	/** Returns the top-left grid position from an array of positions. */
 	FGridPosition GetFirstGridPosition(const TArray<FGridPosition>& Positions);
 
+	bool CheckIfCanAddToStack(const FGridPosition& Position);
+	
 	/** All grid slot widgets belonging to this grid. */
 	UPROPERTY()
 	TArray<UGSGridSlot*> GridSlots;
@@ -99,6 +105,8 @@ private:
 
 	/** Temporary positions highlighted when hovered by proxy. */
 	TArray<FGridPosition> ProxyPositions;
+
+	TWeakObjectPtr<UGSInventoryMenuWidgetController> CachedInventoryController;
 	
 	UPROPERTY(EditAnywhere)
 	int32 RowsNum = 0;

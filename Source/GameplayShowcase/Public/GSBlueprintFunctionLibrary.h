@@ -22,14 +22,19 @@ class GAMEPLAYSHOWCASE_API UGSBlueprintFunctionLibrary : public UBlueprintFuncti
 {
 	GENERATED_BODY()
 public:
-	UFUNCTION(BlueprintPure, Category = "GSAbilitySystemLibrary|WidgetController", meta=(DefaultToSelf="WorldContextObject"))
+	UFUNCTION(BlueprintPure, Category = "GS|WidgetController", meta=(DefaultToSelf="WorldContextObject"))
 	static UGSOverlayWidgetController* GetOverlayWidgetController(const UObject* WorldContextObject);
 
-	UFUNCTION(BlueprintPure, Category = "GSAbilitySystemLibrary|WidgetController", meta=(DefaultToSelf="WorldContextObject"))
+	UFUNCTION(BlueprintPure, Category = "GS|WidgetController", meta=(DefaultToSelf="WorldContextObject"))
 	static UGSCharacterMenuWidgetController* GetCharacterMenuWidgetController(const UObject* WorldContextObject);
 
-	UFUNCTION(BlueprintPure, Category = "GSAbilitySystemLibrary|WidgetController", meta=(DefaultToSelf="WorldContextObject"))
+	UFUNCTION(BlueprintPure, Category = "GS|WidgetController", meta=(DefaultToSelf="WorldContextObject"))
 	static UGSInventoryMenuWidgetController* GetInventoryMenuWidgetController(const UObject* WorldContextObject);
+
+	UFUNCTION(BlueprintPure, Category = "GS|WidgetController", meta=(DefaultToSelf="WorldContextObject"))
+	static UCanvasPanel* GetOverlayCanvasPanelRef(const UObject* WorldContextObject);
+
+	static FText GetGameplayTagAsText(const FGameplayTag& Tag);
 	
 private:
 	// TODO: Optimize this

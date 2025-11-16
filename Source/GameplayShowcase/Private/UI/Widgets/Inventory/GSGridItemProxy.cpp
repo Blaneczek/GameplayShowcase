@@ -9,7 +9,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/Image.h"
 #include "Player/GSPlayerController.h"
-#include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
+#include "GSBlueprintFunctionLibrary.h"
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 #include "UI/Widgets/Inventory/GSGridItem.h"
 
@@ -30,31 +30,43 @@ void UGSGridItemProxy::InitProxy(UTexture2D* ItemIcon, UGSGridItem* GridItem, UC
 	WidgetSize = InWidgetSize;
 	ProxySize = InProxySize;
 	CanvasSlot = InSlot;
-	CanvasPanel = InCanvas;
+	CachedMainCanvasPanel = InCanvas;
 
-	// Widget is not hit testable, but we need to be able to remove widget when right mouse button is down 
+	// Widget is not hit testable, but we need to be able to remove widget when right mouse button is down
+	// or discard item instance if left mouse button is down outside Inventory widget
 	if (AGSPlayerController* PlayerController = Cast<AGSPlayerController>(UGameplayStatics::GetPlayerController(this, 0)))
 	{
-		//TODO: LeftMouseButton - if on Level, remove item from inventory
-		//PlayerController->OnLeftMouseButtonDown.BindUObject(this, &UGSGridItemProxy::RemoveProxy);
+		PlayerController->OnLeftMouseButtonDown.BindUObject(this, &UGSGridItemProxy::DiscardItem);
 		PlayerController->OnRightMouseButtonDown.BindUObject(this, &UGSGridItemProxy::RemoveProxy);
-	}	
+	}
+
+	CachedInventoryController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this);
+		
     InitDragging();
 }
 
 void UGSGridItemProxy::InitDragging()
 {
-	if (!CanvasPanel.IsValid())
+	if (!CachedMainCanvasPanel.IsValid())
 	{
 		return;		
 	}
 	
-	CanvasSize = CanvasPanel.Get()->GetCachedGeometry().GetLocalSize();
+	CanvasSize = CachedMainCanvasPanel.Get()->GetCachedGeometry().GetLocalSize();
 	CanvasSlot->SetSize(WidgetSize);
 	CanvasSlot->SetZOrder(100);
 	CanvasSlot->SetPosition(UWidgetLayoutLibrary::GetMousePositionOnViewport(this) - (WidgetSize * 0.5f));
 
 	bIsDragging = true;	
+}
+
+bool UGSGridItemProxy::DiscardItem()
+{
+	if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
+	{
+		InvController->DiscardItem();
+	}
+	return true;
 }
 
 void UGSGridItemProxy::NativeTick(const FGeometry& MyGeometry, float DeltaTime)
@@ -89,9 +101,9 @@ void UGSGridItemProxy::NativeDestruct()
 
 bool UGSGridItemProxy::RemoveProxy()
 {
-	if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+	if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
 	{
-		Controller->CallOnGridItemProxyStatusChanged(false, ProxySize);	
+		InvController->CallOnGridItemProxyStatusChanged(false, ProxySize);	
 	}
 	bIsDragging = false;
 	RemoveFromParent();

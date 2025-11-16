@@ -16,16 +16,16 @@ struct FItemInstance
 	GENERATED_BODY()
 
 	FItemInstance() = default;
-	FItemInstance(const FItemInstance&) = default;
-	FItemInstance& operator=(const FItemInstance&) = default;
-	FItemInstance(FItemInstance&&) noexcept = default;
-	FItemInstance& operator=(FItemInstance&&) noexcept = default;
 
 	FORCEINLINE const FItemDefinition& GetItemDefinition() const {return ItemDefinition.Get(); }
 	FORCEINLINE FItemDefinition& GetItemDefinitionMutable() { return ItemDefinition.GetMutable(); }
-
+	
 	FORCEINLINE int32 GetStackCount() const { return StackCount; };
-	FORCEINLINE void AddToStack(int32 NumToAdd) { StackCount += NumToAdd; }
+	FORCEINLINE void SetStackCount(int32 InStackCount) { StackCount = InStackCount; };
+	FORCEINLINE void AddToStack(int32 NumToAdd)
+	{
+		StackCount = FMath::Max(0, StackCount += NumToAdd);
+	}
 		
 	FORCEINLINE FGuid GetInstanceID() const { return InstanceID; };
 	FORCEINLINE void CreateID() { InstanceID = FGuid::NewGuid(); }

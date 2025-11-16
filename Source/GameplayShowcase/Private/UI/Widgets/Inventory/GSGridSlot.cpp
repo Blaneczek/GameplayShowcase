@@ -3,7 +3,8 @@
 
 #include "UI/Widgets/Inventory/GSGridSlot.h"
 #include "Components/Border.h"
-#include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
+#include "GSBlueprintFunctionLibrary.h"
+#include "UI/Widgets/Inventory/GSGridItem.h"
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 
 void UGSGridSlot::NativeConstruct()
@@ -13,12 +14,13 @@ void UGSGridSlot::NativeConstruct()
 	if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
 	{
 		Controller->OnItemProxyStatusChanged.AddUObject(this, &UGSGridSlot::SetGridItemProxyStatus);
+		CachedInventoryController = Controller;
 	}
 }
 
 void UGSGridSlot::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (bItemProxyExists && GridSlot && CheckAllGridItemPositionsDelegate.IsBound())
+	if (bItemProxyExists && CheckAllGridItemPositionsDelegate.IsBound())
 	{
 		CheckAllGridItemPositionsDelegate.Execute(Position, ProxySize);
 	}
@@ -34,19 +36,40 @@ void UGSGridSlot::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 
 FReply UGSGridSlot::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if (bItemProxyExists && bRelocationAllowed && InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	if (bItemProxyExists && bRelocationAllowed)
 	{
-		if (UGSInventoryMenuWidgetController* Controller = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
+		UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get();
+		if (!InvController)
 		{
-			Controller->RelocateGridItem(InventoryGridIndex);
+			return FReply::Handled();
+		}
+		
+		if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+		{
+			if (!bCanAddToStack)
+			{
+				InvController->RelocateGridItem(InventoryGridIndex);				
+			}
+			else
+			{
+				if (const UGSGridItem* OccupyingGridItem = OccupyingGridItemRef.Get())
+				{
+					InvController->TryAddToStack(OccupyingGridItem->GetItemID());
+				}				
+			}				
+		}
+		else if (InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
+		{
+			InvController->RemoveActiveGridItemProxy();
 		}
 	}
 	return FReply::Handled();
 }
 
-void UGSGridSlot::SetOccupancyStatus(bool bIsOccupied)
+void UGSGridSlot::SetOccupancyStatus(bool bIsOccupied, UGSGridItem* OccupyingGridItem)
 {
 	bOccupied = bIsOccupied;
+	bOccupied ? OccupyingGridItemRef = OccupyingGridItem : OccupyingGridItemRef = nullptr;
 }
 
 void UGSGridSlot::SetGridItemProxyStatus(bool bProxyExists, const FItemSize& inProxySize)
@@ -60,9 +83,10 @@ void UGSGridSlot::SetGridItemProxyStatus(bool bProxyExists, const FItemSize& inP
 	}
 }
 
-void UGSGridSlot::SetRelocationStatus(bool bCanRelocateItem)
+void UGSGridSlot::SetRelocationStatus(bool bCanRelocateItem, bool InCanAddToStack)
 {
 	bRelocationAllowed = bCanRelocateItem;
+	bCanAddToStack = InCanAddToStack;
 	bCanRelocateItem ? GridSlot->SetBrushColor(RelocationAllowedColor) : GridSlot->SetBrushColor(RelocationForbiddenColor);
 }
 

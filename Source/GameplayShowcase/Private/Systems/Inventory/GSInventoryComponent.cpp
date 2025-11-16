@@ -3,8 +3,9 @@
 
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
-#include "Systems/AbilitySystem/GSBlueprintFunctionLibrary.h"
+#include "GSBlueprintFunctionLibrary.h"
 #include "Systems/Inventory/Items/GSItemComponent.h"
+#include "Systems/Inventory/Items/GSWorldItemActor.h"
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 
@@ -39,20 +40,37 @@ void UGSInventoryComponent::RemoveItemOnFloor(UGSItemComponent* ItemComponent)
 
 bool UGSInventoryComponent::TryEquipItem(FItemInstance* Item)
 {
-	return TryEquipItemDelegate.Execute(Item);
+	if (TryEquipItemDelegate.IsBound())
+	{
+		return TryEquipItemDelegate.Execute(Item);
+	}
+	return false;
 }
 
 bool UGSInventoryComponent::TryEquipItem(const FGuid& ItemID)
 {
-	return TryEquipItemDelegate.Execute(FindItemInstanceByID(ItemID));
+	if (TryEquipItemDelegate.IsBound())
+	{
+		return TryEquipItemDelegate.Execute(FindItemInstanceByID(ItemID));
+	}
+	return false;
 }
 
 void UGSInventoryComponent::UnequipItem(const FGuid& ItemID)
 {
 	if (FItemInstance* Item = FindItemInstanceByID(ItemID))
 	{
-		UnequipItemDelegate.Execute(Item);
+		UnequipItemDelegate.ExecuteIfBound(Item);
 	}	
+}
+
+void UGSInventoryComponent::DiscardItemInstance(const FGuid& ItemID)
+{
+	if (FItemInstance* Item = FindItemInstanceByID(ItemID))
+	{
+		SpawnWorldItemActor(MoveTemp(Item->GetItemDefinitionMutable()), this, GetOwner()->GetActorLocation());
+		RemoveItemInstance(ItemID);
+	}
 }
 
 void UGSInventoryComponent::TryAddItem()
@@ -68,10 +86,9 @@ void UGSInventoryComponent::TryAddItem()
 		FItemDefinition& Def = ItemComponent->GetItemDefinitionRefMutable();
 
 		// If item is stackable, try first add it to the existing instance
-		if (TryAddItemToStack(Def))
+		if (TryAddNewItemToStack(Def))
 		{
 			It.RemoveCurrent();
-			UE_LOG(LogTemp, Warning, TEXT("Item added to inventory: %s"), *ItemComponent->GetOwner()->GetName());
 			ItemComponent->GetOwner()->Destroy();
 			return;
 		}
@@ -80,12 +97,8 @@ void UGSInventoryComponent::TryAddItem()
 		if (TryAddNewItem(Def))
 		{
 			It.RemoveCurrent();
-			UE_LOG(LogTemp, Warning, TEXT("Item added to inventory: %s"), *ItemComponent->GetOwner()->GetName());
 			ItemComponent->GetOwner()->Destroy();
-			return;
 		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Can't add item: %s"), *ItemComponent->GetOwner()->GetName());
 	}
 }
 
@@ -97,24 +110,87 @@ bool UGSInventoryComponent::TryActivateItemAction(const FGuid& ItemID)
 		return false;
 	}
 
-	const FItemDefinition& Def = Instance->GetItemDefinition();
+	FItemDefinition& Def = Instance->GetItemDefinitionMutable();
 	if (Def.GetFragmentByType<FEquipmentFragment>())
 	{
 		if (TryEquipItem(Instance))
 		{
-			OnItemEquippedDelegate.Execute(Def.Type);
+			OnItemEquippedDelegate.ExecuteIfBound(Def.Type);
 			return true;
 		}
 	}
 
-	if (Def.GetFragmentByType<FConsumableFragment>())
+	if (FConsumableFragment* ConsumeFragment = Def.GetFragmentByTypeMutable<FConsumableFragment>())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("consume item"));		
+		ConsumeFragment->Consume(OwningCharacter.Get());
+		HandleStackChange(Instance, -1);		
 	}
 	return false;
 }
 
-bool UGSInventoryComponent::TryAddItemToStack(FItemDefinition& Def)
+void UGSInventoryComponent::TryAddToItemStack(const FGuid& ItemIDTo, const FGuid& ItemIDFrom)
+{
+	if (ItemIDTo == ItemIDFrom)
+	{
+		return;
+	}
+	
+	FItemInstance* InstanceTo= FindItemInstanceByID(ItemIDTo);
+	FItemInstance* InstanceFrom = FindItemInstanceByID(ItemIDFrom);
+	if (!InstanceTo || !InstanceFrom)
+	{
+		return;
+	}
+
+	FItemDefinition& DefTo = InstanceTo->GetItemDefinitionMutable();
+	FItemDefinition& DefFrom = InstanceFrom->GetItemDefinitionMutable();
+	if (DefTo.Name == DefFrom.Name)
+	{
+		//  Is stackable
+		if (DefTo.GetFragmentByTypeMutable<FStackableFragment>())
+		{
+			const int32 StackLeft = HandleStackChange(InstanceTo, InstanceFrom->GetStackCount());
+			if (StackLeft > 0)
+			{
+				InstanceFrom->SetStackCount(StackLeft);
+				OnItemInstanceChangedDelegate.ExecuteIfBound(InstanceFrom);
+			}
+			else
+			{
+				RemoveItemInstance(InstanceFrom);
+			}		
+		}
+	}
+}
+
+bool UGSInventoryComponent::CheckIfCanAddToStack(const FGuid& ItemIDTo, const FGuid& ItemIDFrom)
+{
+	if (ItemIDTo == ItemIDFrom)
+	{
+		return false;
+	}
+	
+	const FItemInstance* InstanceTo = FindItemInstanceByID(ItemIDTo);
+	const FItemInstance* InstanceFrom = FindItemInstanceByID(ItemIDFrom);
+	if (!InstanceTo || !InstanceFrom)
+	{
+		return false;
+	}
+
+	const FItemDefinition& DefTo = InstanceTo->GetItemDefinition();
+	const FItemDefinition& DefFrom = InstanceFrom->GetItemDefinition();
+	if (DefTo.Name == DefFrom.Name)
+	{
+		//  Is stackable
+		if (DefTo.GetFragmentByType<FStackableFragment>())
+		{
+			return InstanceTo->GetStackCount() < MaxStackSize;	
+		}
+	}
+	return false;
+}
+
+bool UGSInventoryComponent::TryAddNewItemToStack(FItemDefinition& Def)
 {
 	if (FStackableFragment* StackableFrag = Def.GetFragmentByTypeMutable<FStackableFragment>())
 	{
@@ -126,20 +202,14 @@ bool UGSInventoryComponent::TryAddItemToStack(FItemDefinition& Def)
 		
 		if (Instance)
 		{
-			int32 StackNum = StackableFrag->GetStackNum();
-			const int32 StackSizeLeft = MaxStackSize - Instance->GetStackCount();
-			const int32 StackNumToAdd = FMath::Min(StackNum, StackSizeLeft);
-			StackNum -= StackNumToAdd;
-			Instance->AddToStack(StackNumToAdd);
-			OnItemInstanceChangedDelegate.Execute(Instance);
-			
-			// Stack has filled up, decrease Item's StackNum for another TryAddItem
-			if (StackNum > 0)
+			const int32 LeftStackNum = HandleStackChange(Instance, StackableFrag->GetStackNum());		
+			if (LeftStackNum > 0)
 			{
-				StackableFrag->SetNewStackNum(StackNum);
-				return false;
-			}
-			
+				// Stack has filled up, decrease Item's StackNum for another TryAddNewItemToStack.
+				// If an instance with an incomplete stack is not found, the function will return false.
+				StackableFrag->SetNewStackNum(LeftStackNum);
+				return TryAddNewItemToStack(Def);
+			}		
 			return true;
 		}
 	}
@@ -161,11 +231,82 @@ bool UGSInventoryComponent::TryAddNewItem(FItemDefinition& Def)
 		if (InvController->TryFindFreeSpace(ItemSize, GridInfo))
 		{
 			ItemsInstances.Add(CreateItemInstance(Def));
-			OnItemInstanceAddedDelegate.Execute(ItemsInstances.Last().Get(), GridInfo);
+			OnItemInstanceAddedDelegate.ExecuteIfBound(ItemsInstances.Last().GetMutablePtr<FItemInstance>(), GridInfo);
 			return true;
 		}
 	}
 	return false;
+}
+
+void UGSInventoryComponent::RemoveItemInstance(FItemInstance* Item)
+{
+	// It's safer to remove by InstanceID
+	const FGuid ItemIDToRemove = Item->GetInstanceID();
+	const int32 bRemoved = ItemsInstances.RemoveAll([ItemIDToRemove](const TInstancedStruct<FItemInstance>& InstStruct)
+	{
+		if (const FItemInstance* Instance = InstStruct.GetPtr<FItemInstance>())
+		{
+			return Instance->GetInstanceID() == ItemIDToRemove;
+		}
+		return false;
+	});
+	
+	if (bRemoved)
+	{
+		OnItemInstanceRemovedDelegate.ExecuteIfBound(ItemIDToRemove);
+	}	
+}
+
+void UGSInventoryComponent::RemoveItemInstance(const FGuid& ItemID)
+{
+	int32 bRemoved = ItemsInstances.RemoveAll([ItemID](const TInstancedStruct<FItemInstance>& InstStruct)
+	{
+		if (const FItemInstance* Instance = InstStruct.GetPtr<FItemInstance>())
+		{
+			return Instance->GetInstanceID() == ItemID;
+		}
+		return false;
+	});
+	
+	if (bRemoved)
+	{
+		OnItemInstanceRemovedDelegate.ExecuteIfBound(ItemID);
+	}	
+}
+
+void UGSInventoryComponent::SpawnWorldItemActor(FItemDefinition&& MovedItemDef, const UObject* WorldContextObject, const FVector& SpawnLocation)
+{
+	const TSubclassOf<AActor> Class = MovedItemDef.WorldActorClass.LoadSynchronous();
+	if (!Class || !WorldContextObject)
+	{
+		return;
+	}
+	
+	FTransform SpawnTransform;
+	SpawnTransform.SetLocation(SpawnLocation);
+	if (AGSWorldItemActor* SpawnedActor = WorldContextObject->GetWorld()->SpawnActor<AGSWorldItemActor>(Class, SpawnTransform))
+	{
+		SpawnedActor->SetItemDefinition(MoveTemp(MovedItemDef));
+	}
+}
+
+int32 UGSInventoryComponent::HandleStackChange(FItemInstance* Instance, int32 ChangeNum)
+{
+	const int32 Current = Instance->GetStackCount();
+	const int32 TargetCount = Current + ChangeNum;
+	const int32 ClampedCount = FMath::Clamp(TargetCount, 0, MaxStackSize);
+	const int32 NewChangeNum = ClampedCount - Current;
+	const int32 LeftChangeNum = ChangeNum - NewChangeNum;
+	
+	Instance->AddToStack(NewChangeNum);
+	OnItemInstanceChangedDelegate.ExecuteIfBound(Instance);
+
+	if (ClampedCount == 0)
+	{
+		RemoveItemInstance(Instance);
+	}
+	
+	return LeftChangeNum;
 }
 
 FItemInstance* UGSInventoryComponent::FindItemInstanceByID(const FGuid& ItemID)
@@ -180,7 +321,7 @@ FItemInstance* UGSInventoryComponent::FindItemInstanceByNameTag(const FGameplayT
 {
 	return FindItemInstanceByPredicate([ItemName](const FItemInstance& Instance)
 	{
-			return Instance.GetItemDefinition().Name.MatchesTagExact(ItemName);
+		return Instance.GetItemDefinition().Name.MatchesTagExact(ItemName);
 	});
 }
 

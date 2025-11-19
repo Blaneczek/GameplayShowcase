@@ -72,7 +72,7 @@ void UGSCharacterMenuWidgetController::BindCallbacksToDependencies()
 
 	if (UGSLevelingComponent* LevelingComponent = UGSLevelingComponent::FindLevelingComponent(Character))
 	{
-		LevelingComponent->OnLevelUpDelegate.AddLambda([this](int NewLevel) 
+		LevelingComponent->OnLevelChangedDelegate.AddLambda([this](int NewLevel) 
 		{
 			Level = NewLevel;
 			OnLevelChanged.Broadcast(NewLevel);

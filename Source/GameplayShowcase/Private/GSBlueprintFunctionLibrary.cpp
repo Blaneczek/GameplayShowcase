@@ -3,6 +3,7 @@
 
 #include "GSBlueprintFunctionLibrary.h"
 #include "Components/CanvasPanel.h"
+#include "Systems/Leveling/GSLevelingComponent.h"
 #include "UI/Controllers/GSOverlayWidgetController.h"
 
 UGSOverlayWidgetController* UGSBlueprintFunctionLibrary::GetOverlayWidgetController(const UObject* WorldContextObject)
@@ -34,6 +35,16 @@ FText UGSBlueprintFunctionLibrary::GetGameplayTagAsText(const FGameplayTag& Tag)
 	const FString ShortName = FullName.Mid(DotIndex + 1);
 	
 	return FText::FromString(ShortName);	
+}
+
+int32 UGSBlueprintFunctionLibrary::GetPlayerLevel(const UObject* WorldContextObject)
+{
+	const ACharacter* PlayerChar = UGameplayStatics::GetPlayerCharacter(WorldContextObject, 0);
+	if (UGSLevelingComponent* const LevelComponent = UGSLevelingComponent::FindLevelingComponent(PlayerChar))
+	{
+		return LevelComponent->GetLevel();
+	}
+	return 0;
 }
 
 

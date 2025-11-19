@@ -6,6 +6,7 @@
 #include "IDetailTreeNode.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Inventory/Items/Fragments/GSFragmentTags.h"
+#include "Systems/Leveling/GSLevelingComponent.h"
 #include "UI/Widgets/Inventory/GSGridItem.h"
 #include "UI/Widgets/Inventory/GSGridSlot.h"
 
@@ -33,9 +34,17 @@ void UGSInventoryMenuWidgetController::BindCallbacksToDependencies()
 		});
 		InvComponent->OnItemEquippedDelegate.BindUObject(this, &UGSInventoryMenuWidgetController::EquipGridItem);
 	}
+
+	if (UGSLevelingComponent* LevelComponent = UGSLevelingComponent::FindLevelingComponent(Character))
+	{
+		LevelComponent->OnLevelChangedDelegate.AddLambda([this](int32 NewLevel)
+		{
+			OnPlayerLevelChanged.Broadcast(NewLevel);
+		});
+	}
 }
 
-bool UGSInventoryMenuWidgetController::TryFindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo)
+bool UGSInventoryMenuWidgetController::FindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo)
 {
 	if (FindNewSpaceDelegate.IsBound())
 	{

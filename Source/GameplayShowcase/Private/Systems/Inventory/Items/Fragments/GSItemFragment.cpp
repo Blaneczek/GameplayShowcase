@@ -4,6 +4,7 @@
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
 
 #include "AbilitySystemComponent.h"
+#include "GSBlueprintFunctionLibrary.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Components/TextBlock.h"
 #include "Systems/AbilitySystem/GSGameplayTags.h"
@@ -11,6 +12,30 @@
 #include "Systems/Inventory/Items/Fragments/GSFragmentTags.h"
 #include "UI/Widgets/Inventory/GSItemTooltip.h"
 
+
+FActiveGameplayEffectHandle FItemFragment::ApplyGameplayEffect(AGSPlayerCharacterBase* OwningChar,
+	TSoftClassPtr<UGameplayEffect> GameplayEffect, const TMap<FGameplayTag, int32>& TagsToMagnitude)
+{
+	if (!OwningChar || !GameplayEffect.IsValid())
+	{
+		return FActiveGameplayEffectHandle();
+	}
+	
+	if (UAbilitySystemComponent* ASC = OwningChar->GetAbilitySystemComponent())
+	{
+		FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
+		ContextHandle.AddSourceObject(OwningChar);
+		const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(GameplayEffect.Get(), 1.f, ContextHandle);
+		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
+
+		for (const auto& Pair : TagsToMagnitude)
+		{
+			Spec->SetSetByCallerMagnitude(Pair.Key, Pair.Value);
+		}	
+		return ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+	}
+	return FActiveGameplayEffectHandle();
+}
 
 void FWidgetFragment::SetTextFont(UTextBlock* TextBlock) const
 {
@@ -21,15 +46,21 @@ void FWidgetFragment::SetTextFont(UTextBlock* TextBlock) const
 	TextBlock->SetJustification(ETextJustify::Center);
 }
 
-void FConsumableFragment::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
+
+void FWidgetFragment::AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text) const
 {
 	if (UTextBlock* TextBlock = NewObject<UTextBlock>(ItemTooltip))
 	{
 		SetTextFont(TextBlock);
-		const FText Text = FText::Format(ConsumableText, EffectMagnitude);
 		TextBlock->SetText(Text);
 		ItemTooltip->AddWidgetToTooltip(TextBlock);
 	}
+}
+
+void FConsumableFragment::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
+{
+	const FText Text = FText::Format(ConsumableText, EffectMagnitude);
+	AdaptTextBlock(ItemTooltip, Text);
 }
 
 void FConsumableFragment::LoadData()
@@ -39,40 +70,24 @@ void FConsumableFragment::LoadData()
 
 void FConsumableFragment::Consume(AGSPlayerCharacterBase* OwningChar)
 {
-	if (!OwningChar || !ConsumeEffect.IsValid())
+	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
-		return;
-	}
-	
-	if (UAbilitySystemComponent* ASC = OwningChar->GetAbilitySystemComponent())
-	{
-		FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
-		ContextHandle.AddSourceObject(OwningChar);
-		const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(ConsumeEffect.Get(), 1.f, ContextHandle);
-		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
-
-		Spec->SetSetByCallerMagnitude(GSFragmentTags::ConsumableFragment.GetTag(), EffectMagnitude);
-		
-		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
-	}
+		{GSFragmentTags::ConsumableFragment.GetTag(), EffectMagnitude}
+	};
+	ApplyGameplayEffect(OwningChar, ConsumeEffect, TagsToMagnitude);
 }
 
-void FDamageModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const 
+void FDamageModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 {
-	if (UTextBlock* Attack = NewObject<UTextBlock>(ItemTooltip))
-	{
-		SetTextFont(Attack);
-		const FString Text = FString::Printf(TEXT("Attack value: %d - %d"), AttackDamage.Min, AttackDamage.Max);
-		Attack->SetText(FText::FromString(Text));
-		ItemTooltip->AddWidgetToTooltip(Attack);
-	}
-	if (UTextBlock* MagicAttack = NewObject<UTextBlock>(ItemTooltip))
-	{
-		SetTextFont(MagicAttack);
-		const FString Text = FString::Printf(TEXT("Magic Attack value: %d - %d"), MagicDamage.Min, MagicDamage.Max);
-		MagicAttack ->SetText(FText::FromString(Text));
-		ItemTooltip->AddWidgetToTooltip(MagicAttack);
-	}
+	const int32 MinAttack = GetCurveValue(DamageCurveTable, TEXT("MinAttack"));
+	const int32 MaxAttack = GetCurveValue(DamageCurveTable, TEXT("MaxAttack"));
+	const FText TextAttack = FText::Format(FText::FromString(TEXT("Attack value: {0} - {1}")), MinAttack, MaxAttack);
+	AdaptTextBlock(ItemTooltip, TextAttack);
+
+	const int32 MinMagicAttack = GetCurveValue(DamageCurveTable, TEXT("MinMagicAttack"));
+	const int32 MaxMagicAttack = GetCurveValue(DamageCurveTable, TEXT("MaxMagicAttack"));
+	const FText TextMagicAttack = FText::Format(FText::FromString(TEXT("Magic Attack value: {0} - {1}")), MinMagicAttack, MaxMagicAttack);
+	AdaptTextBlock(ItemTooltip, TextMagicAttack);
 }
 
 void FEquipmentFragment::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
@@ -89,6 +104,37 @@ void FImageFragment::LoadData()
 	LoadSync(Icon);
 }
 
+void FEquipModifier::OnUnequip(AGSPlayerCharacterBase* OwningChar)
+{
+	if (!OwningChar)
+	{
+		return;
+	}
+		
+	if (UAbilitySystemComponent* ASC = OwningChar->GetAbilitySystemComponent())
+	{
+		if (ActiveGE.IsValid())
+		{
+			ASC->RemoveActiveGameplayEffect(ActiveGE);
+		}
+	}
+}
+
+int32 FEquipModifier::GetCurveValue(const UCurveTable* CurveTable, const FName& RowName) const
+{
+	if (!CurveTable)
+	{
+		return 0;
+	}
+	
+	static const FString Context = TEXT("Item modifier");
+	if (const FRealCurve* Curve = CurveTable->FindCurve(RowName, Context))
+	{
+		return Curve->Eval(UpgradeLevel);
+	}
+	return 0;
+}
+
 void FEquipmentFragment::LoadData()
 {
 	LoadAsync(EquipActorClass);
@@ -97,6 +143,7 @@ void FEquipmentFragment::LoadData()
     {
     	FEquipModifier& ModifierRef = Modifier.GetMutable();
     	ModifierRef.LoadData();
+		ModifierRef.SetUpgradeLevel(UpgradeLevel);
     }
 }
 
@@ -107,54 +154,23 @@ void FDamageModifier::LoadData()
 
 void FDefenceModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 {
-	if (UTextBlock* TextBlock = NewObject<UTextBlock>(ItemTooltip))
-	{
-		SetTextFont(TextBlock);
-		const FString Text = FString::Printf(TEXT("Defence: %d"), Defence);
-		TextBlock->SetText(FText::FromString(Text));
-		ItemTooltip->AddWidgetToTooltip(TextBlock);
-	}
-	if (UTextBlock* TextBlock = NewObject<UTextBlock>(ItemTooltip))
-	{
-		SetTextFont(TextBlock);
-		const FString Text = FString::Printf(TEXT("Magic Defence: %d"), MagicDefence);
-		TextBlock->SetText(FText::FromString(Text));
-		ItemTooltip->AddWidgetToTooltip(TextBlock);
-	}
+	const int32 Defence = GetCurveValue(DefenceCurveTable, TEXT("Defence"));
+	const FText TextDefence = FText::Format(FText::FromString(TEXT("Defence: {0}")), Defence);
+	AdaptTextBlock(ItemTooltip, TextDefence);
+
+	const int32 MagicDefence = GetCurveValue(DefenceCurveTable, TEXT("MagicDefence"));
+	const FText TextMagicDefence = FText::Format(FText::FromString(TEXT("Magic Defence: {0}")), MagicDefence);
+	AdaptTextBlock(ItemTooltip, TextMagicDefence);
 }
 
 void FDefenceModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
 {
-	if (!OwningChar || !DefenceModifierEffect.IsValid())
+	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
-		return;
-	}
-	
-	if (UAbilitySystemComponent* ASC = OwningChar->GetAbilitySystemComponent())
-	{
-		FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
-		ContextHandle.AddSourceObject(OwningChar);
-		const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(DefenceModifierEffect.Get(), 1.f, ContextHandle);
-		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
-		
-		Spec->SetSetByCallerMagnitude(GSGameplayTags::Attributes::Primary_Defence.GetTag(), Defence);
-		Spec->SetSetByCallerMagnitude(GSGameplayTags::Attributes::Primary_MagicDefence.GetTag(), MagicDefence);
-		
-		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
-	}
-}
-
-void FDefenceModifier::OnUnequip(AGSPlayerCharacterBase* OwningChar)
-{
-	if (!OwningChar)
-	{
-		return;
-	}
-
-	if (UAbilitySystemComponent* ASC = OwningChar->GetAbilitySystemComponent())
-	{
-		ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSFragmentTags::Modifiers::Defence.GetTag()));
-	}
+		{ GSGameplayTags::Attributes::Primary_Defence.GetTag(), GetCurveValue(DefenceCurveTable, TEXT("Defence")) },
+		{ GSGameplayTags::Attributes::Primary_MagicDefence.GetTag(), GetCurveValue(DefenceCurveTable, TEXT("MagicDefence")) },
+	};
+	ActiveGE = ApplyGameplayEffect(OwningChar, DefenceModifierEffect, TagsToMagnitude);
 }
 
 void FDefenceModifier::LoadData()
@@ -162,40 +178,67 @@ void FDefenceModifier::LoadData()
 	LoadAsync(DefenceModifierEffect);	
 }
 
-void FDamageModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
+void FAttackSpeedModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 {
-	if (!OwningChar || !DamageModifierEffect.IsValid())
+	const FText Text = FText::Format(FText::FromString(TEXT("Attack speed: +{0}%")), BonusAttackSpeedPercent);
+	AdaptTextBlock(ItemTooltip, Text);
+}
+
+void FAttackSpeedModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
+{
+	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
-		return;
-	}
-	
-	if (UAbilitySystemComponent* ASC = OwningChar->GetAbilitySystemComponent())
+		{GSGameplayTags::Attributes::Primary_AttackSpeed.GetTag(), BonusAttackSpeedPercent},
+	};
+	ActiveGE = ApplyGameplayEffect(OwningChar, AttackSpeedModifierEffect, TagsToMagnitude);
+}
+
+void FAttackSpeedModifier::LoadData()
+{
+	LoadAsync(AttackSpeedModifierEffect);
+}
+
+void FAttributeModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
+{
+	for (const auto& Attribute : Attributes)
 	{
-		FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
-		ContextHandle.AddSourceObject(OwningChar);
-		const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(DamageModifierEffect.Get(), 1.f, ContextHandle);
-		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
-		
-		Spec->SetSetByCallerMagnitude(GSGameplayTags::Attributes::Primary_AttackDamageMin.GetTag(), AttackDamage.Min);
-		Spec->SetSetByCallerMagnitude(GSGameplayTags::Attributes::Primary_AttackDamageMax.GetTag(), AttackDamage.Max);
-		Spec->SetSetByCallerMagnitude(GSGameplayTags::Attributes::Primary_MagicDamageMin.GetTag(), MagicDamage.Min);
-		Spec->SetSetByCallerMagnitude(GSGameplayTags::Attributes::Primary_MagicDamageMax.GetTag(), MagicDamage.Max);
-		
-		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+		const FText Text = FText::Format(FText::FromString(TEXT("{0}: +{1}"))
+			, UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Attribute.AttributeTag)
+			, Attribute.RolledValue);
+		AdaptTextBlock(ItemTooltip, Text);
 	}
 }
 
-void FDamageModifier::OnUnequip(AGSPlayerCharacterBase* OwningChar)
+void FAttributeModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
 {
-	if (!OwningChar)
+	TMap<FGameplayTag, int32> TagsToMagnitude;
+	for (const auto& Attribute : Attributes)
 	{
-		return;
+		TagsToMagnitude.Add(Attribute.AttributeTag, Attribute.RolledValue);
 	}
+	ActiveGE = ApplyGameplayEffect(OwningChar, AttributeModifierEffect, TagsToMagnitude);
+}
 
-	if (UAbilitySystemComponent* ASC = OwningChar->GetAbilitySystemComponent())
+void FAttributeModifier::LoadData()
+{
+	LoadAsync(AttributeModifierEffect);
+	
+	for (FAttributeEntry& Entry : Attributes)
 	{
-		ASC->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSFragmentTags::Modifiers::Damage.GetTag()));
+		Entry.RolledValue = FMath::RandRange(Entry.ValueRange.Min, Entry.ValueRange.Max);
 	}
+}
+
+void FDamageModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
+{
+	const TMap<FGameplayTag, int32> TagsToMagnitude
+	{
+		{ GSGameplayTags::Attributes::Primary_AttackDamageMin.GetTag(), GetCurveValue(DamageCurveTable, TEXT("MinAttack")) },
+		{ GSGameplayTags::Attributes::Primary_AttackDamageMax.GetTag(), GetCurveValue(DamageCurveTable, TEXT("MaxAttack")) },
+		{ GSGameplayTags::Attributes::Primary_MagicDamageMin.GetTag(), GetCurveValue(DamageCurveTable, TEXT("MinMagicAttack")) },
+		{ GSGameplayTags::Attributes::Primary_MagicDamageMax.GetTag(), GetCurveValue(DamageCurveTable, TEXT("MaxMagicAttack")) },
+	};
+	ActiveGE = ApplyGameplayEffect(OwningChar, DamageModifierEffect, TagsToMagnitude);
 }
 
 void FEquipmentFragment::OnEquip(AGSPlayerCharacterBase* OwningChar)

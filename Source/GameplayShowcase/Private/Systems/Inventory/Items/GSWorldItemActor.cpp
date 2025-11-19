@@ -6,6 +6,7 @@
 #include "GSBlueprintFunctionLibrary.h"
 #include "Components/WidgetComponent.h"
 #include "Systems/Inventory/Items/GSItemComponent.h"
+#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
 
 
 AGSWorldItemActor::AGSWorldItemActor()
@@ -50,7 +51,6 @@ void AGSWorldItemActor::SetItemDefinition(FItemDefinition&& Def)
 	ItemComponent->MoveItemDefinition(MoveTemp(Def));
 }
 
-
 // Called when the game starts or when spawned
 void AGSWorldItemActor::BeginPlay()
 {
@@ -74,7 +74,10 @@ void AGSWorldItemActor::OnDefinitionSet()
 	SetItemMesh();
 	
 	const FItemDefinition& Def = ItemComponent->GetItemDefinitionRef();
-	ItemNameSet(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Def.Name));
+	const FEquipmentFragment* EquipFragment = Def.GetFragmentByType<FEquipmentFragment>();	
+	EquipFragment ?
+		ItemNameSet(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Def.Name), EquipFragment->UpgradeLevel) :
+		ItemNameSet(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Def.Name));
 }
 
 

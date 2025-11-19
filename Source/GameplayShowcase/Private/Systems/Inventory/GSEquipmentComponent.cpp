@@ -3,6 +3,7 @@
 
 #include "Systems/Inventory/GSEquipmentComponent.h"
 
+#include "GSBlueprintFunctionLibrary.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Inventory/Items/GSEquipItemActor.h"
@@ -14,9 +15,7 @@
 UGSEquipmentComponent::UGSEquipmentComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-
 }
-
 
 void UGSEquipmentComponent::BeginPlay()
 {
@@ -63,21 +62,27 @@ bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 
 bool UGSEquipmentComponent::CheckIfCanEquipItem(const FItemDefinition& ItemDefinition)
 {
-	// Check if there is already equipped item
-	if (ItemDefinition.Type.MatchesTag(GSItemTags::Type::Weapon.GetTag()) || ItemDefinition.Type.MatchesTag(GSItemTags::Type::Armor.GetTag()))
+	// Check if Player has required Level
+	if (const AGSPlayerCharacterBase* PlayerChar = OwningCharacter.Get())
 	{
-		if (EquippedActors.Contains(ItemDefinition.Type.RequestDirectParent()))
+		if (ItemDefinition.Level > PlayerChar->GetPlayerLevel())
 		{
-			// TODO: switch weapon if can
 			return false;
-		}	
-	}
-	else if (EquippedActors.Contains(ItemDefinition.Type))
-	{
-		// TODO: switch weapon if can
-		return false;
+		}
 	}
 	
+	// Check if there is already equipped item
+	const FGameplayTag ItemType = ItemDefinition.Type;
+	FGameplayTag TagToCheck = ItemType;
+	if (ItemDefinition.Type.MatchesTag(GSItemTags::Type::Weapon.GetTag())
+		|| ItemDefinition.Type.MatchesTag(GSItemTags::Type::Armor.GetTag()))
+	{
+		TagToCheck = ItemType.RequestDirectParent();
+	}	
+	if (EquippedActors.Contains(TagToCheck))
+	{
+		return false;
+	}
 	return true;
 }
 
@@ -94,8 +99,6 @@ void UGSEquipmentComponent::UnequipItem(FItemInstance* UnequippedItem)
 AGSEquipItemActor* UGSEquipmentComponent::SpawnEquippedActor(FEquipmentFragment* EquipmentFragment) const
 {
 	AGSEquipItemActor* SpawnedActor = EquipmentFragment->SpawnEquipmentActor(OwnerSkeletalMesh.Get());
-	//
-	//	
 	return SpawnedActor;
 }
 

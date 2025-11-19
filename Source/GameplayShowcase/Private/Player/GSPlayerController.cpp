@@ -186,7 +186,9 @@ void AGSPlayerController::EnableLook(const FInputActionValue& Value)
 	}
 	
 	bCanLook = Value.Get<bool>();
-	bCanLook ? CurrentMouseCursor = MouseCursors[EGameplayCursorType::CameraLook] : CurrentMouseCursor = MouseCursors[EGameplayCursorType::Default];	
+	bCanLook ?
+		CurrentMouseCursor = MouseCursors[EGameplayCursorType::CameraLook] :
+		CurrentMouseCursor = MouseCursors[EGameplayCursorType::Default];	
 }
 
 void AGSPlayerController::CameraZoom(const FInputActionValue& Value)

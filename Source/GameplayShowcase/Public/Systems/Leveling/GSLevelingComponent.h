@@ -18,7 +18,7 @@ struct FCurrentLevelInfo
 };
 
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FLevelUpSignature, int32 /* NewLevel*/);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnLevelChangedSignature, int32 NewLevel);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FXPChangedSignature, const FCurrentLevelInfo& /* CurrentLevelInfo */, int32 /* NewLevelsNum */);
 
 class UGSAttributeSetPlayer;
@@ -52,12 +52,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	
-	
 public:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UGSLevelUpInfo> LevelUpInfo;
 
-	FLevelUpSignature OnLevelUpDelegate;
+	FOnLevelChangedSignature OnLevelChangedDelegate;
 
 	FXPChangedSignature OnXPChangedDelegate;
 	

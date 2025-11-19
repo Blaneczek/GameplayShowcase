@@ -228,7 +228,7 @@ bool UGSInventoryComponent::TryAddNewItem(FItemDefinition& Def)
 	if (UGSInventoryMenuWidgetController* InvController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this))
 	{
 		FGridInfo GridInfo;
-		if (InvController->TryFindFreeSpace(ItemSize, GridInfo))
+		if (InvController->FindFreeSpace(ItemSize, GridInfo))
 		{
 			ItemsInstances.Add(CreateItemInstance(Def));
 			OnItemInstanceAddedDelegate.ExecuteIfBound(ItemsInstances.Last().GetMutablePtr<FItemInstance>(), GridInfo);

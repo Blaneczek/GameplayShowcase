@@ -23,7 +23,7 @@ void UGSLevelingComponent::SetLevel(int32 NewLevel)
 {
 	const int32 NewLevelsNum = NewLevel - Level;
 	Level = FMath::Clamp(NewLevel, 1, LevelUpInfo->LevelUpInformation.Num());
-	OnLevelUpDelegate.Broadcast(Level);
+	OnLevelChangedDelegate.Broadcast(Level);
 	
 	// Set min XP for given level
 	const int32 NewXP = LevelUpInfo->FindMinXPForLevel(Level);
@@ -55,7 +55,7 @@ void UGSLevelingComponent::AddToXP(int32 InXP)
 void UGSLevelingComponent::LevelUp(int32 InLevels)
 {
 	Level += InLevels;
-	OnLevelUpDelegate.Broadcast(Level);
+	OnLevelChangedDelegate.Broadcast(Level);
 }
 
 

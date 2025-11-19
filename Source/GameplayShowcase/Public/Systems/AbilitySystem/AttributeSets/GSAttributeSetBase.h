@@ -65,6 +65,10 @@ public:
 	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, MagicDamageMax);
 
 	UPROPERTY(BlueprintReadOnly, Category="Attributes")
+	FGameplayAttributeData AttackSpeed;
+	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, AttackSpeed);
+
+	UPROPERTY(BlueprintReadOnly, Category="Attributes")
 	FGameplayAttributeData Defence;
 	ATTRIBUTE_ACCESSORS_BASIC(UGSAttributeSetBase, Defence);
 

@@ -7,6 +7,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "GSItemDefinition.generated.h"
 
+class UTextBlock;
 class UGSItemTooltip;
 struct FItemFragment;
 
@@ -24,9 +25,6 @@ struct FItemDefinition
 	FItemDefinition(FItemDefinition&&) noexcept = default;
 	FItemDefinition& operator=(FItemDefinition&&) noexcept = default;
 
-	/** Spawns the in-world actor when dropping this item. */
-	void SpawnWorldActor(const UObject* WorldContextObject, const FTransform& SpawnTransform);
-
 	/** Finds a mutable fragment of a given type, or nullptr if not found. */
 	template<typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
 	FragmentType* GetFragmentByTypeMutable();
@@ -43,6 +41,7 @@ struct FItemDefinition
 
 	void AdaptItemNameToWidget(UGSItemTooltip* ItemTooltip) const;
 	void AdaptItemTypeToWidget(UGSItemTooltip* ItemTooltip) const;
+	TPair<UTextBlock*, int32> AdaptItemLevelToWidget(UGSItemTooltip* ItemTooltip) const;
 	
 	/** Name of this item. */
 	UPROPERTY(EditAnywhere)
@@ -51,6 +50,9 @@ struct FItemDefinition
 	/** Type of this item. */
 	UPROPERTY(EditAnywhere)
 	FGameplayTag Type;
+
+	UPROPERTY(EditAnywhere)
+	int32 Level = 0;
 
 	/** The class of the actor representing this item in the world. */
 	UPROPERTY(EditAnywhere)

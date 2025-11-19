@@ -40,7 +40,11 @@ void AGSPlayerCharacterBase::InitAbilityActorInfo()
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
 	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Status_ST_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
-							.AddUObject(this, &AGSPlayerCharacterBase::OnStaminaConsumingTagChanged);
+							.AddUObject(this, &AGSPlayerCharacterBase::OnSTConsumingTagChanged);
+	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Status_HP_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
+							.AddUObject(this, &AGSPlayerCharacterBase::OnHPConsumingTagChanged);
+	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Status_PE_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
+							.AddUObject(this, &AGSPlayerCharacterBase::OnPEConsumingTagChanged);
 }
 
 void AGSPlayerCharacterBase::PossessedBy(AController* NewController)
@@ -93,32 +97,48 @@ void AGSPlayerCharacterBase::CheckIfCharacterIsMoving()
 	}
 }
 
-void AGSPlayerCharacterBase::OnStaminaConsumingTagChanged(const FGameplayTag Tag, int32 NewCount)
+void AGSPlayerCharacterBase::OnSTConsumingTagChanged(const FGameplayTag Tag, int32 NewCount)
 {
+	OnConsumingTagChanged(Tag, NewCount, STRegenTimerHandle, STRegenEffectClass, GSGameplayTags::Status_ST_Regen.GetTag());
+}
+
+void AGSPlayerCharacterBase::OnHPConsumingTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	OnConsumingTagChanged(Tag, NewCount, HPRegenTimerHandle, HPRegenEffectClass, GSGameplayTags::Status_HP_Regen.GetTag());
+}
+
+void AGSPlayerCharacterBase::OnPEConsumingTagChanged(const FGameplayTag Tag, int32 NewCount)
+{
+	OnConsumingTagChanged(Tag, NewCount, PERegenTimerHandle, PERegenEffectClass, GSGameplayTags::Status_PE_Regen.GetTag());
+}
+
+void AGSPlayerCharacterBase::OnConsumingTagChanged(const FGameplayTag Tag, int32 NewCount,
+	FTimerHandle& TimerHandle, TSubclassOf<UGameplayEffect> EffectClass, const FGameplayTag& RegenTag)
+{
+	if (!EffectClass)
+	{
+		return;
+	}
+	
 	// Consuming Tag was removed
 	if (NewCount == 0)
 	{	
 		GetWorldTimerManager().SetTimer(
-			StaminaRegenTimerHandle,
-			FTimerDelegate::CreateWeakLambda(this, [this]()
+			TimerHandle,
+			FTimerDelegate::CreateWeakLambda(this, [this, EffectClass]()
 			{
-				ApplySimpleGameplayEffectToSelf(STRegenEffectClass, 1.f);
+				ApplySimpleGameplayEffectToSelf(EffectClass, 1.f);
 			}),
-			StaminaRegenDelay,
+			RegenDelay,
 			false
 		);
 	}
 	// Consuming Tag was added
 	else
 	{
-		GetWorldTimerManager().ClearTimer(StaminaRegenTimerHandle);
-		AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSGameplayTags::Status_ST_Regen.GetTag()));
+		GetWorldTimerManager().ClearTimer(TimerHandle);
+		AbilitySystemComponent->RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(RegenTag));
 	}
-}
-
-UGSSpringArmComponent* AGSPlayerCharacterBase::GetCameraArm() const
-{
-	return CameraArm;
 }
 
 UAbilitySystemComponent* AGSPlayerCharacterBase::GetAbilitySystemComponent() const
@@ -129,16 +149,6 @@ UAbilitySystemComponent* AGSPlayerCharacterBase::GetAbilitySystemComponent() con
 UAttributeSet* AGSPlayerCharacterBase::GetAttributeSet() const
 {
 	return AttributeSet;
-}
-
-UGSLevelingComponent* AGSPlayerCharacterBase::GetLevelingComponent() const
-{
-	return LevelingComponent;
-}
-
-UGSInventoryComponent* AGSPlayerCharacterBase::GetInventoryComponent() const
-{
-	return InventoryComponent;
 }
 
 void AGSPlayerCharacterBase::SetMovementSpeed(bool bSprint, float NewSpeed)

@@ -164,7 +164,7 @@ FReply UGSGridItem::NativeOnMouseMove(const FGeometry& InGeometry, const FPointe
 	{
 		const FVector2D WidgetSize = ItemTooltip->GetDesiredSize();
 		const FVector2D MousePosition = UWidgetLayoutLibrary::GetMousePositionOnViewport(this);
-		// Tooltip above mouse
+		// Tooltip is above mouse
 		FVector2D NewPosition = FVector2D(MousePosition.X - WidgetSize.X * 0.5f, MousePosition.Y - WidgetSize.Y - 5.f);	
 		// Prevent going outside screen
 		NewPosition.X = FMath::Clamp(NewPosition.X, 0.f, MainCanvasSize.X - WidgetSize.X);
@@ -186,19 +186,10 @@ void UGSGridItem::InitItemTooltip(const FItemInstance* Item)
 
 	if (UGSItemTooltip* Tooltip = CreateWidget<UGSItemTooltip>(this, ItemTooltipClass))
 	{
-		ItemTooltip = Tooltip;
-		Tooltip->SetVisibility(ESlateVisibility::Collapsed);
-		
+		ItemTooltip = Tooltip;	
 		const FItemDefinition& Def = Item->GetItemDefinition();
-		TArray<const FWidgetFragment*> Fragments = Def.GetAllFragmentsByType<FWidgetFragment>();
-		
-		Def.AdaptItemNameToWidget(Tooltip);
-		for (const auto& Fragment : Fragments)
-		{
-			Fragment->AdaptToWidget(Tooltip);
-		}
-		Def.AdaptItemTypeToWidget(Tooltip);
-		
+		Tooltip->InitTooltip(Def, CachedInventoryController.Get());
+			
 		TooltipCanvasSlotRef = MainCanvasPanel->AddChildToCanvas(Tooltip);
 		TooltipCanvasSlotRef->SetZOrder(100);
 		TooltipCanvasSlotRef->SetAutoSize(true);

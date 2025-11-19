@@ -23,7 +23,7 @@ public:
 	void SetItemDefinition(FItemDefinition&& Def);
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ItemNameSet(const FText& Name);
+	void ItemNameSet(const FText& Name, int32 UpgradeLevel = 99);
 	
 protected:
 	// Called when the game starts or when spawned

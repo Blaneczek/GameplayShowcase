@@ -13,5 +13,7 @@ namespace GSFragmentTags
 	{
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage)
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Defence)
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttackSpeed)
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(CharacterAttributes)
 	}
 }

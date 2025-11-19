@@ -6,6 +6,7 @@
 #include "AbilitySystemInterface.h"
 #include "Systems/AbilitySystem/Interfaces/GSAbilityCharacterHelper.h"
 #include "GameFramework/Character.h"
+#include "Systems/Leveling/GSLevelingComponent.h"
 #include "GSPlayerCharacterBase.generated.h"
 
 class USphereComponent;
@@ -34,11 +35,12 @@ public:
 	virtual void PossessedBy(AController* NewController) override;
 	
 	/* Getters */
-	FORCEINLINE UGSSpringArmComponent* GetCameraArm() const;
+	FORCEINLINE UGSSpringArmComponent* GetCameraArm() const { return CameraArm; };
 	FORCEINLINE virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;	
 	FORCEINLINE UAttributeSet* GetAttributeSet() const;
-	FORCEINLINE UGSLevelingComponent* GetLevelingComponent() const;
-	FORCEINLINE UGSInventoryComponent* GetInventoryComponent() const;
+	FORCEINLINE UGSLevelingComponent* GetLevelingComponent() const { return LevelingComponent; }
+	FORCEINLINE UGSInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	FORCEINLINE int32 GetPlayerLevel() const { return LevelingComponent->GetLevel(); }
 	
 	virtual void SetMovementSpeed(bool bSprint = true, float NewSpeed = 500.f) override;
 
@@ -76,9 +78,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
 	TSubclassOf<UGameplayEffect> STRegenEffectClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	TSubclassOf<UGameplayEffect> HPRegenEffectClass;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	TSubclassOf<UGameplayEffect> PERegenEffectClass;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
-    float StaminaRegenDelay = 1.f;
+    float RegenDelay = 1.f;
+	
 	/************************/
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Abilities")
@@ -93,12 +100,18 @@ private:
 	
 	void CheckIfCharacterIsMoving();
 	
-	void OnStaminaConsumingTagChanged(const FGameplayTag Tag, int32 NewCount);
+	void OnSTConsumingTagChanged(const FGameplayTag Tag, int32 NewCount);
+	void OnHPConsumingTagChanged(const FGameplayTag Tag, int32 NewCount);
+	void OnPEConsumingTagChanged(const FGameplayTag Tag, int32 NewCount);
+	void OnConsumingTagChanged(const FGameplayTag Tag, int32 NewCount, FTimerHandle& TimerHandle,
+								TSubclassOf<UGameplayEffect> EffectClass, const FGameplayTag& RegenTag);
 	
 
 	float DefaultMovementSpeed;
 
 	FTimerHandle IsMovingTimerHandle;
-	FTimerHandle StaminaRegenTimerHandle;
+	FTimerHandle STRegenTimerHandle;
+	FTimerHandle HPRegenTimerHandle;
+	FTimerHandle PERegenTimerHandle;
 
 };

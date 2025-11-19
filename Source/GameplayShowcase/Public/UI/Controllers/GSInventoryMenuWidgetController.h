@@ -39,11 +39,12 @@ DECLARE_DELEGATE_RetVal_OneParam(bool, FTryUnequipGridItemSignature, UGSGridItem
 // Proxy delegates
 DECLARE_MULTICAST_DELEGATE_TwoParams(FItemProxyStatusChangedSignature, bool bProxyExists, const FItemSize& ProxySize);
 
-DECLARE_DELEGATE_RetVal_TwoParams(bool, FFindNewSpaceDelegate, const FItemSize& ItemSize, FGridInfo& OutGridInfo);
+DECLARE_DELEGATE_RetVal_TwoParams(bool, FFindNewSpaceSignature, const FItemSize& ItemSize, FGridInfo& OutGridInfo);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStackCountChangedSignature, const FGuid& InstanceID, int32 NewStackCount);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStackCountChangedSignature, const FGuid& InstanceID, int32 NewStackCount);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnItemRemovedSignature, const FGuid& InstanceID);
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnPlayerLevelChangedSignatureInv, int32 PlayerLevel);
 
 /**
  * Controller for the Inventory Menu Widget.
@@ -66,7 +67,7 @@ public:
 	* @param OutGridInfo	grid info filled in if a space was found.				
 	* @return				true if space was found, false if wasn't.
 	*/
-	bool TryFindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
+	bool FindFreeSpace(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
 
 	/** Ask InventoryComponent to activate default action of item (equip, consume, etc.).
 	* 
@@ -112,11 +113,13 @@ public:
 	FCheckEquipGridItemSignature CanEquipGridItemDelegate;
 	FTryUnequipGridItemSignature TryUnequipGridItemDelegate;
 	
-	FFindNewSpaceDelegate FindNewSpaceDelegate;
+	FFindNewSpaceSignature FindNewSpaceDelegate;
 	FItemProxyStatusChangedSignature OnItemProxyStatusChanged;
 
 	FOnStackCountChangedSignature OnStackCountChanged;
 	FOnItemRemovedSignature OnItemRemoved;
+
+	FOnPlayerLevelChangedSignatureInv OnPlayerLevelChanged;
 	
 private:
 	TWeakObjectPtr<UGSInventoryComponent> InventoryComponent;

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "ActiveGameplayEffectHandle.h"
 #include "GameplayTagContainer.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
@@ -41,9 +42,6 @@ struct FItemFragment
 	FItemFragment& operator=(FItemFragment&&) = default;
 	virtual ~FItemFragment() = default;
 
-	FORCEINLINE FGameplayTag GetFragmentTag() const { return FragmentTag; }
-	FORCEINLINE void SetFragmentTag(FGameplayTag Tag) { FragmentTag = Tag; }
-
 	virtual void LoadData() {};
 	
 protected:
@@ -76,12 +74,11 @@ protected:
 		const FSoftObjectPath Path = Asset.ToSoftObjectPath();
 		DataHandle = Manager.RequestSyncLoad(Path);
 	}
+
+	FActiveGameplayEffectHandle ApplyGameplayEffect(AGSPlayerCharacterBase* OwningChar, TSoftClassPtr<UGameplayEffect> GameplayEffect,
+							const TMap<FGameplayTag, int32>& TagsToMagnitude);
 	
 	TSharedPtr<FStreamableHandle> DataHandle;
-	
-private:
-	UPROPERTY(EditAnywhere)
-	FGameplayTag FragmentTag = FGameplayTag::EmptyTag;
 };
 
 
@@ -124,6 +121,7 @@ struct FWidgetFragment : public FItemFragment
 
 protected:
 	void SetTextFont(UTextBlock* TextBlock) const;
+	void AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text) const;
 };
 
 
@@ -199,29 +197,24 @@ private:
 };
 
 
-
 USTRUCT()
 struct FEquipModifier : public FWidgetFragment
 {
 	GENERATED_BODY()
 
 	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) {};
-	virtual void OnUnequip(AGSPlayerCharacterBase* OwningChar) {};	
+	virtual void OnUnequip(AGSPlayerCharacterBase* OwningChar);
+	FORCEINLINE void SetUpgradeLevel(int32 InUpgradeLevel) { UpgradeLevel = InUpgradeLevel; };
+	
+protected:	
+	int32 GetCurveValue(const UCurveTable* CurveTable, const FName& RowName) const;
+
+	FActiveGameplayEffectHandle ActiveGE;
+	
+private:
+	int32 UpgradeLevel = 0;
 };
 
-
-USTRUCT(BlueprintType)
-struct FDamagePair
-{
-	GENERATED_BODY()
-
-	FDamagePair() = default;
-
-	UPROPERTY(EditAnywhere)
-	int32 Min = 0;
-	UPROPERTY(EditAnywhere)
-	int32 Max = 0;
-};
 
 USTRUCT(BlueprintType)
 struct FDamageModifier : public FEquipModifier
@@ -230,18 +223,15 @@ struct FDamageModifier : public FEquipModifier
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
 	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
-	virtual void OnUnequip(AGSPlayerCharacterBase* OwningChar) override;
-
 	virtual void LoadData() override;
 	
 private:
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<UGameplayEffect> DamageModifierEffect = nullptr;
-	
+
 	UPROPERTY(EditAnywhere)
-	FDamagePair AttackDamage;
-	UPROPERTY(EditAnywhere)
-	FDamagePair MagicDamage;
+	TObjectPtr<UCurveTable> DamageCurveTable = nullptr;
+
 };
 
 USTRUCT(BlueprintType)
@@ -251,8 +241,6 @@ struct FDefenceModifier : public FEquipModifier
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
 	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
-	virtual void OnUnequip(AGSPlayerCharacterBase* OwningChar) override;
-
 	virtual void LoadData() override;
 	
 private:
@@ -260,9 +248,55 @@ private:
 	TSoftClassPtr<UGameplayEffect> DefenceModifierEffect = nullptr;
 	
 	UPROPERTY(EditAnywhere)
-	int32 Defence = 0;
+	TObjectPtr<UCurveTable> DefenceCurveTable = nullptr;
+};
+
+USTRUCT(BlueprintType)
+struct FAttackSpeedModifier : public FEquipModifier
+{
+	GENERATED_BODY()
+
+	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
+	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
+	virtual void LoadData() override;
+	
+private:
 	UPROPERTY(EditAnywhere)
-	int32 MagicDefence = 0;
+	TSoftClassPtr<UGameplayEffect> AttackSpeedModifierEffect = nullptr;
+	
+	UPROPERTY(EditAnywhere)
+	int32 BonusAttackSpeedPercent = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FAttributeEntry
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	FGameplayTag AttributeTag;
+
+	UPROPERTY(EditAnywhere)
+	FInt32Interval ValueRange;
+
+	int32 RolledValue = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FAttributeModifier : public FEquipModifier
+{
+	GENERATED_BODY()
+
+	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
+	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
+	virtual void LoadData() override;
+	
+private:
+	UPROPERTY(EditAnywhere)
+	TSoftClassPtr<UGameplayEffect> AttributeModifierEffect = nullptr;
+
+	UPROPERTY(EditAnywhere)
+	TArray<FAttributeEntry> Attributes;
 };
 
 USTRUCT(BlueprintType)
@@ -279,6 +313,9 @@ struct FEquipmentFragment : public FWidgetFragment
 	void DestroyEquippedActor();
 
 	virtual void LoadData() override;
+	
+	UPROPERTY(EditAnywhere)
+	int32 UpgradeLevel = 0;
 	
 private:
 	FName GetSocketEnumShortName() const;

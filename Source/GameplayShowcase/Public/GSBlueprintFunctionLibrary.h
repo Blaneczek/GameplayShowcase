@@ -35,6 +35,8 @@ public:
 	static UCanvasPanel* GetOverlayCanvasPanelRef(const UObject* WorldContextObject);
 
 	static FText GetGameplayTagAsText(const FGameplayTag& Tag);
+
+	static int32 GetPlayerLevel(const UObject* WorldContextObject);
 	
 private:
 	// TODO: Optimize this

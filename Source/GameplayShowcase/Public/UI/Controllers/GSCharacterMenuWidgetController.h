@@ -12,7 +12,7 @@ class UGSAttributeInfo;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributeInfoSignature, const FAttributeInfo&, Info);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnCurrentLevelXPChangedSignature, int32, XP, int32, MaxXP);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelChangedSignature, int32, NewLevel);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerLevelChangedSignature, int32, NewLevel);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributePointSignature, int32, NumOfAvailablePoints);
 
 using FAttributePair = TPair<FGameplayAttribute(*)(), FGameplayAttribute(*)()>;
@@ -44,7 +44,7 @@ public:
 	FAttributeInfoSignature AttributeInfoDelegate;
 	
 	UPROPERTY(BlueprintAssignable, Category="GS|Leveling")
-	FOnLevelChangedSignature OnLevelChanged;
+	FOnPlayerLevelChangedSignature OnLevelChanged;
 	
 	UPROPERTY(BlueprintAssignable, Category="GS|Leveling")
 	FOnCurrentLevelXPChangedSignature OnXPChanged;

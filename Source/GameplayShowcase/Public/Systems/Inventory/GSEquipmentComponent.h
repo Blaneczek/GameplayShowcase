@@ -15,6 +15,7 @@ class AGSEquipItemActor;
 struct FItemInstance;
 class UGSInventoryComponent;
 
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class GAMEPLAYSHOWCASE_API UGSEquipmentComponent : public UActorComponent
 {
@@ -35,7 +36,6 @@ private:
 	
 	AGSEquipItemActor* SpawnEquippedActor(FEquipmentFragment* EquipmentFragment) const;
 	void RemoveEquippedActor(const FGameplayTag& EquipType, FEquipmentFragment* EquipmentFragment);
-
 	
 	TWeakObjectPtr<UGSInventoryComponent> InventoryComponent;
 	TWeakObjectPtr<AGSPlayerCharacterBase> OwningCharacter;

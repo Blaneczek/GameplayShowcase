@@ -48,7 +48,7 @@ bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 		return false;
 	}
 	
-	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.GetFragmentByTypeMutable<FEquipmentFragment>())
+	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.FindFragmentByTypeMutable<FEquipmentFragment>())
 	{
 		EquipmentFragment->OnEquip(OwningCharacter.Get());
 		// SpawnEquippedActor can return nullptr, it means that equipped item doesn't have in word representation,
@@ -89,7 +89,7 @@ bool UGSEquipmentComponent::CheckIfCanEquipItem(const FItemDefinition& ItemDefin
 void UGSEquipmentComponent::UnequipItem(FItemInstance* UnequippedItem)
 {
 	FItemDefinition& ItemDefinition = UnequippedItem->GetItemDefinitionMutable();
-	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.GetFragmentByTypeMutable<FEquipmentFragment>())
+	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.FindFragmentByTypeMutable<FEquipmentFragment>())
 	{
 		EquipmentFragment->OnUnequip(OwningCharacter.Get());        	
         RemoveEquippedActor(ItemDefinition.Type.RequestDirectParent(), EquipmentFragment);

@@ -78,7 +78,7 @@ void AGSWorldItemActor::OnDefinitionSet()
 	SetItemMesh();
 	
 	const FItemDefinition& Def = ItemComponent->GetItemDefinitionRef();
-	const FEquipmentFragment* EquipFragment = Def.GetFragmentByType<FEquipmentFragment>();	
+	const FEquipmentFragment* EquipFragment = Def.FindFragmentByType<FEquipmentFragment>();	
 	EquipFragment ?
 		ItemNameSet(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Def.Name), EquipFragment->GetUpgradeLevel()) :
 		ItemNameSet(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Def.Name));

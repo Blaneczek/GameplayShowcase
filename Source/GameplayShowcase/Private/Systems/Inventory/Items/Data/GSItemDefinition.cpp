@@ -13,65 +13,65 @@
 
 void FItemDefinition::AdaptItemNameToWidget(UGSItemTooltip* ItemTooltip)  const
 {
-	if (UTextBlock* NameText = NewObject<UTextBlock>(ItemTooltip))
-	{
-		if (const FEquipmentFragment* EquipFragment = GetFragmentByType<FEquipmentFragment>())
-		{
-			const FText Text = FText::Format(FText::FromString(TEXT("{0}+{1}"))
-				, UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Name)
-				, EquipFragment->GetUpgradeLevel());	
-			NameText->SetText(Text);
-		}
-		else
-		{
-			NameText->SetText(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Name));
-		}
+	FText Text;
+	const FEquipmentFragment* EquipFragment = FindFragmentByType<FEquipmentFragment>();
 
-		FSlateFontInfo FontInfo = NameText->GetFont();
-		FontInfo.Size = 8;
-		NameText->SetFont(FontInfo);
-		NameText->SetJustification(ETextJustify::Center);
-		NameText->SetColorAndOpacity(FLinearColor(1.f, 0.7f, 0.f,1.f));
+	EquipFragment
+	? Text = FText::Format(FText::FromString(TEXT("{0}+{1}")), UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Name), EquipFragment->GetUpgradeLevel())
+	: Text = UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Name);
 	
-		ItemTooltip->AddWidgetToTooltip(NameText);
-	}
+	AdaptTextBlock(ItemTooltip, Text, ItemNameColor);
 }
 
 void FItemDefinition::AdaptItemTypeToWidget(UGSItemTooltip* ItemTooltip) const
 {
-	if (UTextBlock* TextBlock = NewObject<UTextBlock>(ItemTooltip))
+	const FText Text = FText::Format(FText::FromString(TEXT("[{0}]")), UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Type));
+	if (UTextBlock* TextBlock = AdaptTextBlock(ItemTooltip, Text, FLinearColor::White))
 	{
-		FSlateFontInfo FontInfo = TextBlock->GetFont();
-		FontInfo.Size = 8;
-		TextBlock->SetFont(FontInfo);
-		TextBlock->SetJustification(ETextJustify::Center);
-		const FText Text = FText::Format(FText::FromString(TEXT("[{0}]")), UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Type));	
-		TextBlock->SetText(Text);
-		ItemTooltip->AddWidgetToTooltip(TextBlock);
 		UVerticalBoxSlot* Slot = UWidgetLayoutLibrary::SlotAsVerticalBoxSlot(TextBlock);
-		Slot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
-		Slot->SetVerticalAlignment(VAlign_Bottom);
+        Slot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+        Slot->SetVerticalAlignment(VAlign_Bottom);
 	}
 }
 
 TPair<UTextBlock*, int32> FItemDefinition::AdaptItemLevelToWidget(UGSItemTooltip* ItemTooltip) const
 {
-	if (UTextBlock* TextBlock = NewObject<UTextBlock>(ItemTooltip))
-	{		
-		FSlateFontInfo FontInfo = TextBlock ->GetFont();
-		FontInfo.Size = 8;
-		TextBlock->SetFont(FontInfo);
-		TextBlock->SetJustification(ETextJustify::Center);
-		TextBlock->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f,1.f));
-		const FText Text = FText::Format(FText::FromString(TEXT("Level: {0}")), Level);	
-		TextBlock->SetText(Text);
-		ItemTooltip->AddWidgetToTooltip(TextBlock);
-		return TPair<UTextBlock*, int32>(TextBlock, Level);
-	}
-	return TPair<UTextBlock*, int32>(nullptr, Level);
+	const FText Text = FText::Format(FText::FromString(TEXT("Level: {0}")), Level);
+	return TPair<UTextBlock*, int32>(AdaptTextBlock(ItemTooltip, Text, PermittedItemLevelColor), Level);
 }
 
 void FItemDefinition::ClearFragments()
 {
 	Fragments.Empty();
+}
+
+void FItemDefinition::SetTextFont(UTextBlock* TextBlock, const FLinearColor& TextColor) const 
+{
+	if (!TextBlock)
+	{
+		return;
+	}
+	
+	FSlateFontInfo FontInfo = TextBlock->GetFont();
+	FontInfo.Size = 8;
+	TextBlock->SetFont(FontInfo);
+	TextBlock->SetJustification(ETextJustify::Center);
+	TextBlock->SetColorAndOpacity(TextColor);
+}
+
+UTextBlock* FItemDefinition::AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text, const FLinearColor& TextColor) const
+{
+	if (!ItemTooltip)
+	{
+		return nullptr;
+	}
+	
+	if (UTextBlock* TextBlock = NewObject<UTextBlock>(ItemTooltip))
+	{
+		SetTextFont(TextBlock, TextColor);
+		TextBlock->SetText(Text);
+		ItemTooltip->AddWidgetToTooltip(TextBlock);
+		return TextBlock;
+	}
+	return nullptr;
 }

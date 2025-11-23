@@ -14,11 +14,14 @@
 void UGSItemTooltip::InitTooltip(const FItemDefinition& Def, UGSInventoryMenuWidgetController* Controller)
 {
 	SetVisibility(ESlateVisibility::Collapsed);
-	
-	TArray<const FWidgetFragment*> Fragments = Def.GetAllFragmentsByType<FWidgetFragment>();
 
+	PermittedItemLevelColor = Def.PermittedItemLevelColor;
+	ForbiddenItemLevelColor = Def.ForbiddenItemLevelColor;
+	
+	TArray<const FWidgetFragment*> Fragments = Def.FindAllFragmentsByType<FWidgetFragment>();
+	
 	Def.AdaptItemNameToWidget(this);
-	SetLevelInfo(Def.AdaptItemLevelToWidget(this));
+    SetLevelInfo(Def.AdaptItemLevelToWidget(this));		
 	for (const auto& Fragment : Fragments)
 	{
 		Fragment->AdaptToWidget(this);
@@ -57,7 +60,7 @@ void UGSItemTooltip::SetLevelColor(int32 PlayerLevel)
 	}
 	
 	PlayerLevel >= ItemLevel
-	? LevelTextBlock->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f,1.f))
-	: LevelTextBlock->SetColorAndOpacity(FLinearColor(1.f, 0.f, 0.f,1.f));
+	? LevelTextBlock->SetColorAndOpacity(PermittedItemLevelColor)
+	: LevelTextBlock->SetColorAndOpacity(ForbiddenItemLevelColor);
 }
 

@@ -34,4 +34,7 @@ private:
 	UPROPERTY()
 	TObjectPtr<UTextBlock> LevelTextBlock;
 	int32 ItemLevel;
+
+	FLinearColor PermittedItemLevelColor = FLinearColor::Green;
+	FLinearColor ForbiddenItemLevelColor = FLinearColor::Red;	
 };

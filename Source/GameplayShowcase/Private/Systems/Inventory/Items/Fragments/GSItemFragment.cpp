@@ -47,7 +47,7 @@ FActiveGameplayEffectHandle FItemFragment::ApplyGameplayEffect(IAbilitySystemInt
 // FWidgetFragment
 // ============================================================================
 
-void FWidgetFragment::SetTextFont(UTextBlock* TextBlock) const
+void FWidgetFragment::SetTextFont(UTextBlock* TextBlock, const FLinearColor& TextColor) const
 {
 	if (!TextBlock)
 	{
@@ -59,6 +59,7 @@ void FWidgetFragment::SetTextFont(UTextBlock* TextBlock) const
 	FontInfo.Size = 8;
 	TextBlock->SetFont(FontInfo);
 	TextBlock->SetJustification(ETextJustify::Center);
+	TextBlock->SetColorAndOpacity(TextColor);
 }
 
 void FWidgetFragment::AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text, const FLinearColor& TextColor) const
@@ -70,9 +71,8 @@ void FWidgetFragment::AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& T
 	
 	if (UTextBlock* TextBlock = NewObject<UTextBlock>(ItemTooltip))
 	{
-		SetTextFont(TextBlock);
+		SetTextFont(TextBlock, TextColor);
 		TextBlock->SetText(Text);
-		TextBlock->SetColorAndOpacity(TextColor);
 		ItemTooltip->AddWidgetToTooltip(TextBlock);
 	}
 }

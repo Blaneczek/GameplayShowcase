@@ -123,7 +123,7 @@ struct FWidgetFragment : public FItemFragment
 
 protected:
 	/* Default font settings. */
-	void SetTextFont(UTextBlock* TextBlock) const;
+	void SetTextFont(UTextBlock* TextBlock, const FLinearColor& TextColor) const;
 	
 	/** Adds a formatted text block to the tooltip */
 	void AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text, const FLinearColor& TextColor) const;

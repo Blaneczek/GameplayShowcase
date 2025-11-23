@@ -16,7 +16,7 @@ void UGSGridItem::ConstructGridItem(int32 InInventoryGridIndex, const FItemInsta
 {
 	ItemID = Item->GetInstanceID();
 	const FItemDefinition& Def = Item->GetItemDefinition();
-	if (Def.GetFragmentByType<FStackableFragment>())
+	if (Def.FindFragmentByType<FStackableFragment>())
 	{
 		UpdateStackCount(ItemID, Item->GetStackCount());
 		StackCountText->SetVisibility(ESlateVisibility::Visible);
@@ -33,8 +33,8 @@ void UGSGridItem::ConstructGridItem(int32 InInventoryGridIndex, const FItemInsta
 	CachedMainCanvasPanel = UGSBlueprintFunctionLibrary::GetOverlayCanvasPanelRef(this);
 	CachedInventoryController = UGSBlueprintFunctionLibrary::GetInventoryMenuWidgetController(this);
 	
-	SetGridItemSize(Def.GetFragmentByType<FGridFragment>());
-	SetGridItemIcon(Def.GetFragmentByType<FImageFragment>());
+	SetGridItemSize(Def.FindFragmentByType<FGridFragment>());
+	SetGridItemIcon(Def.FindFragmentByType<FImageFragment>());
 
 	InitItemTooltip(Item);
 	BindToInventoryController();

@@ -202,12 +202,12 @@ bool UGSInventoryComponent::TryAddNewItemToStack(FItemDefinition& Def)
 		
 		if (Instance)
 		{
-			const int32 LeftStackNum = HandleStackChange(Instance, StackableFrag->GetStackNum());		
+			const int32 LeftStackNum = HandleStackChange(Instance, StackableFrag->GetStackCount());		
 			if (LeftStackNum > 0)
 			{
 				// Stack has filled up, decrease Item's StackRange for another TryAddNewItemToStack.
 				// If an instance with an incomplete stack is not found, the function will return false.
-				StackableFrag->SetNewStackNum(LeftStackNum);
+				StackableFrag->SetStackCount(LeftStackNum);
 				return TryAddNewItemToStack(Def);
 			}		
 			return true;
@@ -347,7 +347,7 @@ TInstancedStruct<FItemInstance> UGSInventoryComponent::CreateItemInstance(FItemD
 	int32 StackNum = 1;
 	if (FStackableFragment* StackableFrag = Def.GetFragmentByTypeMutable<FStackableFragment>())
 	{
-		StackNum = StackableFrag->GetStackNum();
+		StackNum = StackableFrag->GetStackCount();
 	}
 	Item.AddToStack(StackNum);
 	Item.MoveItemDefinition(MoveTemp(Def));

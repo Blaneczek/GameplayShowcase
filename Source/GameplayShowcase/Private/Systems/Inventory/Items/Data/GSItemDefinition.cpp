@@ -19,7 +19,7 @@ void FItemDefinition::AdaptItemNameToWidget(UGSItemTooltip* ItemTooltip)  const
 		{
 			const FText Text = FText::Format(FText::FromString(TEXT("{0}+{1}"))
 				, UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Name)
-				, EquipFragment->UpgradeLevel);	
+				, EquipFragment->GetUpgradeLevel());	
 			NameText->SetText(Text);
 		}
 		else
@@ -33,7 +33,6 @@ void FItemDefinition::AdaptItemNameToWidget(UGSItemTooltip* ItemTooltip)  const
 		NameText->SetJustification(ETextJustify::Center);
 		NameText->SetColorAndOpacity(FLinearColor(1.f, 0.7f, 0.f,1.f));
 	
-		
 		ItemTooltip->AddWidgetToTooltip(NameText);
 	}
 }

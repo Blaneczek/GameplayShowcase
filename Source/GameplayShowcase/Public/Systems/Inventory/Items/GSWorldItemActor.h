@@ -19,16 +19,19 @@ public:
 	// Sets default values for this actor's properties
 	AGSWorldItemActor();
 
-	void SetItemMesh();
 	void SetItemDefinition(FItemDefinition&& Def);
 
+	FORCEINLINE UGSItemComponent* GetItemComponent() { return ItemComponent; }
+	
+	UPROPERTY(EditAnywhere)
+	bool bLoadDataManually = false;
+	
+protected:
+	virtual void BeginPlay() override;
+	
 	UFUNCTION(BlueprintImplementableEvent)
 	void ItemNameSet(const FText& Name, int32 UpgradeLevel = 99);
 	
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USceneComponent> RootScene;
 	
@@ -44,6 +47,9 @@ protected:
 private:
 	UFUNCTION()
 	void OnItemStoppedFalling(UPrimitiveComponent* SleepingComponent, FName BoneName);
-
+	
+	void SetItemMesh();
 	void OnDefinitionSet();
+
+	
 };

@@ -31,12 +31,14 @@ public:
 	FORCEINLINE const FItemDefinition& GetItemDefinitionRef() const { return ItemDefinition; }
 	FORCEINLINE FItemDefinition& GetItemDefinitionRefMutable() { return ItemDefinition; }
 
+	FORCEINLINE void SetItemTag(const FGameplayTag& Tag) { ItemTag = Tag; }
+	FORCEINLINE void EnableRandomizer() { bRandomizeItem = true; }
+	
 	void MoveItemDefinition(FItemDefinition&& Def);
-
+	void LoadDefinition();
+	
 	FOnItemDefinitionSet OnItemDefinitionSet;
-	
-	bool bSpawnedFirstTime = true;
-	
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -60,10 +62,11 @@ private:
 
 	void HandlePickUpOverlap(AActor* OtherActor, bool bEntered);
 
+	void RandomizeItem();
+	
 	UPROPERTY()
 	FItemDefinition ItemDefinition;
 	
-	TWeakObjectPtr<AActor> CachedOwner;
-	bool bDefinitionSet = false;
-		
+	bool bRandomizeItem = false;
+	bool bDefinitionSet = false;		
 };

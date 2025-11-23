@@ -13,7 +13,7 @@
 #include "UI/Widgets/Inventory/GSItemTooltip.h"
 
 
-FActiveGameplayEffectHandle FItemFragment::ApplyGameplayEffect(AGSPlayerCharacterBase* OwningChar,
+FActiveGameplayEffectHandle FItemFragment::ApplyGameplayEffect(IAbilitySystemInterface* OwningChar,
 	TSoftClassPtr<UGameplayEffect> GameplayEffect, const TMap<FGameplayTag, int32>& TagsToMagnitude)
 {
 	if (!OwningChar || !GameplayEffect.IsValid())
@@ -23,9 +23,7 @@ FActiveGameplayEffectHandle FItemFragment::ApplyGameplayEffect(AGSPlayerCharacte
 	
 	if (UAbilitySystemComponent* ASC = OwningChar->GetAbilitySystemComponent())
 	{
-		FGameplayEffectContextHandle ContextHandle = ASC->MakeEffectContext();
-		ContextHandle.AddSourceObject(OwningChar);
-		const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(GameplayEffect.Get(), 1.f, ContextHandle);
+		const FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(GameplayEffect.Get(), 1.f, ASC->MakeEffectContext());
 		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
 
 		for (const auto& Pair : TagsToMagnitude)
@@ -47,12 +45,13 @@ void FWidgetFragment::SetTextFont(UTextBlock* TextBlock) const
 }
 
 
-void FWidgetFragment::AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text) const
+void FWidgetFragment::AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text, const FLinearColor& TextColor) const
 {
 	if (UTextBlock* TextBlock = NewObject<UTextBlock>(ItemTooltip))
 	{
 		SetTextFont(TextBlock);
 		TextBlock->SetText(Text);
+		TextBlock->SetColorAndOpacity(TextColor);
 		ItemTooltip->AddWidgetToTooltip(TextBlock);
 	}
 }
@@ -60,7 +59,7 @@ void FWidgetFragment::AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& T
 void FConsumableFragment::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 {
 	const FText Text = FText::Format(ConsumableText, EffectMagnitude);
-	AdaptTextBlock(ItemTooltip, Text);
+	AdaptTextBlock(ItemTooltip, Text, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
 void FConsumableFragment::LoadData()
@@ -68,7 +67,7 @@ void FConsumableFragment::LoadData()
 	LoadAsync(ConsumeEffect);
 }
 
-void FConsumableFragment::Consume(AGSPlayerCharacterBase* OwningChar)
+void FConsumableFragment::Consume(IAbilitySystemInterface* OwningChar)
 {
 	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
@@ -82,12 +81,12 @@ void FDamageModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 	const int32 MinAttack = GetCurveValue(DamageCurveTable, TEXT("MinAttack"));
 	const int32 MaxAttack = GetCurveValue(DamageCurveTable, TEXT("MaxAttack"));
 	const FText TextAttack = FText::Format(FText::FromString(TEXT("Attack value: {0} - {1}")), MinAttack, MaxAttack);
-	AdaptTextBlock(ItemTooltip, TextAttack);
+	AdaptTextBlock(ItemTooltip, TextAttack, FLinearColor(1.f, 1.f, 1.f, 1.f));
 
 	const int32 MinMagicAttack = GetCurveValue(DamageCurveTable, TEXT("MinMagicAttack"));
 	const int32 MaxMagicAttack = GetCurveValue(DamageCurveTable, TEXT("MaxMagicAttack"));
 	const FText TextMagicAttack = FText::Format(FText::FromString(TEXT("Magic Attack value: {0} - {1}")), MinMagicAttack, MaxMagicAttack);
-	AdaptTextBlock(ItemTooltip, TextMagicAttack);
+	AdaptTextBlock(ItemTooltip, TextMagicAttack, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
 void FEquipmentFragment::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
@@ -99,12 +98,50 @@ void FEquipmentFragment::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 	}
 }
 
+void FEquipmentFragment::Roll()
+{
+	if (!UpgradeLevelDropChance)
+	{
+		return;
+	}
+
+	UpgradeLevel = 0;
+	
+	const FRichCurve& CurveData = UpgradeLevelDropChance->FloatCurve;
+	const float RollValue = FMath::FRandRange(0.f, 100.f);
+	UE_LOG(LogTemp, Warning, TEXT("Roll: %f"), RollValue);
+	for (int32 i = CurveData.Keys.Num() - 1; i >= 0; --i)
+	{
+		const float DropChance = CurveData.Keys[i].Value;
+		const float Level = CurveData.Keys[i].Time;
+
+		// If drop chance is set to 0 in curve, don't use it 
+		if (DropChance <= 0.f)
+		{
+			continue;
+		}
+		if (RollValue <= DropChance)
+		{
+			UpgradeLevel = FMath::Clamp(static_cast<int32>(Level), 0, 9);
+			break;
+		}
+	}
+
+	for (auto& Modifier : EquipModifiers)
+	{
+		if (FEquipModifier* ModifierRef = Modifier.GetMutablePtr<FEquipModifier>())
+		{
+			ModifierRef->Roll();
+		}	
+	}
+}
+
 void FImageFragment::LoadData()
 {
 	LoadSync(Icon);
 }
 
-void FEquipModifier::OnUnequip(AGSPlayerCharacterBase* OwningChar)
+void FEquipModifier::OnUnequip(IAbilitySystemInterface* OwningChar)
 {
 	if (!OwningChar)
 	{
@@ -130,7 +167,7 @@ int32 FEquipModifier::GetCurveValue(const UCurveTable* CurveTable, const FName& 
 	static const FString Context = TEXT("Item modifier");
 	if (const FRealCurve* Curve = CurveTable->FindCurve(RowName, Context))
 	{
-		return Curve->Eval(UpgradeLevel);
+		return Curve->Eval(CachedUpgradeLevel);
 	}
 	return 0;
 }
@@ -156,14 +193,14 @@ void FDefenceModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 {
 	const int32 Defence = GetCurveValue(DefenceCurveTable, TEXT("Defence"));
 	const FText TextDefence = FText::Format(FText::FromString(TEXT("Defence: {0}")), Defence);
-	AdaptTextBlock(ItemTooltip, TextDefence);
+	AdaptTextBlock(ItemTooltip, TextDefence, FLinearColor(1.f, 1.f, 1.f, 1.f));
 
 	const int32 MagicDefence = GetCurveValue(DefenceCurveTable, TEXT("MagicDefence"));
 	const FText TextMagicDefence = FText::Format(FText::FromString(TEXT("Magic Defence: {0}")), MagicDefence);
-	AdaptTextBlock(ItemTooltip, TextMagicDefence);
+	AdaptTextBlock(ItemTooltip, TextMagicDefence, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
-void FDefenceModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
+void FDefenceModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 {
 	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
@@ -181,10 +218,10 @@ void FDefenceModifier::LoadData()
 void FAttackSpeedModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 {
 	const FText Text = FText::Format(FText::FromString(TEXT("Attack speed: +{0}%")), BonusAttackSpeedPercent);
-	AdaptTextBlock(ItemTooltip, Text);
+	AdaptTextBlock(ItemTooltip, Text, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
-void FAttackSpeedModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
+void FAttackSpeedModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 {
 	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
@@ -200,36 +237,53 @@ void FAttackSpeedModifier::LoadData()
 
 void FAttributeModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 {
-	for (const auto& Attribute : Attributes)
+	for (const auto& Entry : Attributes)
 	{
-		const FText Text = FText::Format(FText::FromString(TEXT("{0}: +{1}"))
-			, UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Attribute.AttributeTag)
-			, Attribute.RolledValue);
-		AdaptTextBlock(ItemTooltip, Text);
+		if (Entry.bAccepted)
+		{
+			const FText Text = FText::Format(FText::FromString(TEXT("{0}: +{1}"))
+            			, UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Entry.AttributeTag)
+            			, Entry.RolledValue);
+            AdaptTextBlock(ItemTooltip, Text, FLinearColor(0.8f, 0.5f, 0.4f, 1.f));
+		}
+		
 	}
 }
 
-void FAttributeModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
+void FAttributeModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 {
 	TMap<FGameplayTag, int32> TagsToMagnitude;
-	for (const auto& Attribute : Attributes)
+	TagsToMagnitude.Reserve(AcceptedAttributesNum);
+	
+	for (const auto& Entry : Attributes)
 	{
-		TagsToMagnitude.Add(Attribute.AttributeTag, Attribute.RolledValue);
+		if (Entry.bAccepted)
+		{
+			TagsToMagnitude.Add(Entry.AttributeTag, Entry.RolledValue);
+		}	
 	}
 	ActiveGE = ApplyGameplayEffect(OwningChar, AttributeModifierEffect, TagsToMagnitude);
 }
 
 void FAttributeModifier::LoadData()
 {
-	LoadAsync(AttributeModifierEffect);
-	
-	for (FAttributeEntry& Entry : Attributes)
-	{
-		Entry.RolledValue = FMath::RandRange(Entry.ValueRange.Min, Entry.ValueRange.Max);
-	}
+	LoadAsync(AttributeModifierEffect);	
 }
 
-void FDamageModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
+void FAttributeModifier::Roll()
+{
+	for (auto& Entry : Attributes)
+    {
+		Entry.bGuaranteed ? Entry.bAccepted = true : Entry.bAccepted = FMath::RandBool();
+		if (Entry.bAccepted)	
+		{
+			AcceptedAttributesNum++;
+			Entry.RolledValue = FMath::RandRange(Entry.MagnitudeRange.Min, Entry.MagnitudeRange.Max);
+		}
+    }
+}
+
+void FDamageModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 {
 	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
@@ -241,7 +295,7 @@ void FDamageModifier::OnEquip(AGSPlayerCharacterBase* OwningChar)
 	ActiveGE = ApplyGameplayEffect(OwningChar, DamageModifierEffect, TagsToMagnitude);
 }
 
-void FEquipmentFragment::OnEquip(AGSPlayerCharacterBase* OwningChar)
+void FEquipmentFragment::OnEquip(IAbilitySystemInterface* OwningChar)
 {
 	if (bEquipped)
 	{
@@ -256,7 +310,7 @@ void FEquipmentFragment::OnEquip(AGSPlayerCharacterBase* OwningChar)
 	}
 }
 
-void FEquipmentFragment::OnUnequip(AGSPlayerCharacterBase* OwningChar)
+void FEquipmentFragment::OnUnequip(IAbilitySystemInterface* OwningChar)
 {
 	if (!bEquipped)
 	{

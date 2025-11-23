@@ -205,7 +205,7 @@ bool UGSInventoryComponent::TryAddNewItemToStack(FItemDefinition& Def)
 			const int32 LeftStackNum = HandleStackChange(Instance, StackableFrag->GetStackNum());		
 			if (LeftStackNum > 0)
 			{
-				// Stack has filled up, decrease Item's StackNum for another TryAddNewItemToStack.
+				// Stack has filled up, decrease Item's StackRange for another TryAddNewItemToStack.
 				// If an instance with an incomplete stack is not found, the function will return false.
 				StackableFrag->SetNewStackNum(LeftStackNum);
 				return TryAddNewItemToStack(Def);

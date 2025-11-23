@@ -57,8 +57,12 @@ void AGSWorldItemActor::BeginPlay()
 	Super::BeginPlay();
 	
 	ItemMesh->OnComponentSleep.AddDynamic(this, &AGSWorldItemActor::OnItemStoppedFalling);
-	
 	ItemComponent->OnItemDefinitionSet.BindUObject(this, &AGSWorldItemActor::OnDefinitionSet);
+
+	if (bLoadDataManually)
+	{
+		ItemComponent->LoadDefinition();
+	}
 }
 
 void AGSWorldItemActor::OnItemStoppedFalling(UPrimitiveComponent* SleepingComponent, FName BoneName)
@@ -76,7 +80,7 @@ void AGSWorldItemActor::OnDefinitionSet()
 	const FItemDefinition& Def = ItemComponent->GetItemDefinitionRef();
 	const FEquipmentFragment* EquipFragment = Def.GetFragmentByType<FEquipmentFragment>();	
 	EquipFragment ?
-		ItemNameSet(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Def.Name), EquipFragment->UpgradeLevel) :
+		ItemNameSet(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Def.Name), EquipFragment->GetUpgradeLevel()) :
 		ItemNameSet(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(Def.Name));
 }
 

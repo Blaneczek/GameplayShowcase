@@ -4,11 +4,11 @@
 #include "Systems/Inventory/Items/GSItemComponent.h"
 
 #include "GameplayShowcase.h"
-#include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Inventory/Items/Data/GSItemDataSubsystem.h"
 #include "Systems/Inventory/GSInventoryHelper.h"
+#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
 
 UGSItemComponent::UGSItemComponent()
 {
@@ -33,19 +33,8 @@ void UGSItemComponent::MoveItemDefinition(FItemDefinition&& Def)
 	OnItemDefinitionSet.ExecuteIfBound();
 }
 
-void UGSItemComponent::BeginPlay()
+void UGSItemComponent::LoadDefinition()
 {
-	Super::BeginPlay();
-
-	CachedOwner = GetOwner();
-	
-    OnComponentBeginOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneEntered);
-    OnComponentEndOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneLeft);
-
-	if (!bSpawnedFirstTime)
-	{
-		return;
-	}
 	if (UGSItemDataSubsystem* ItemDataSubsystem = UGameplayStatics::GetGameInstance(this)->GetSubsystem<UGSItemDataSubsystem>())
 	{
 		// If data is already loaded, get item
@@ -59,17 +48,26 @@ void UGSItemComponent::BeginPlay()
 	}
 }
 
+void UGSItemComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	
+    OnComponentBeginOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneEntered);
+    OnComponentEndOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneLeft);
+}
+
 void UGSItemComponent::SetItemDefinition(UGSItemDataSubsystem* ItemDataSubsystem)
 {
-	if (ItemDataSubsystem)
+	if (const FItemDefinition* Def = ItemDataSubsystem->GetItemDefinitionByTag(ItemTag))
 	{
-		if (const FItemDefinition* Def = ItemDataSubsystem->GetItemDefinitionByTag(ItemTag))
+		ItemDefinition = *Def;
+		if (bRandomizeItem)
 		{
-			ItemDefinition = *Def;
-			ItemDataSubsystem->OnItemDataLoadedDelegate.RemoveAll(this);
-			bDefinitionSet = true;
-			OnItemDefinitionSet.ExecuteIfBound();
+			RandomizeItem();
 		}
+		ItemDataSubsystem->OnItemDataLoadedDelegate.RemoveAll(this);
+		bDefinitionSet = true;
+		OnItemDefinitionSet.ExecuteIfBound();
 	}
 }
 
@@ -88,7 +86,7 @@ void UGSItemComponent::PickUpZoneLeft(UPrimitiveComponent* OverlappedComponent, 
 
 void UGSItemComponent::HandlePickUpOverlap(AActor* OtherActor, bool bEntered)
 {
-	if (!CachedOwner.IsValid() || !OtherActor)
+	if (!OtherActor)
 	{
 		return;
 	}
@@ -98,6 +96,17 @@ void UGSItemComponent::HandlePickUpOverlap(AActor* OtherActor, bool bEntered)
 		if (IGSInventoryHelper* InventoryHelper = Cast<IGSInventoryHelper>(InvComponent))
 		{
 			bEntered ? InventoryHelper->AddItemOnFloor(this) : InventoryHelper->RemoveItemOnFloor(this);
+		}
+	}
+}
+
+void UGSItemComponent::RandomizeItem()
+{
+	for (auto& Fragment : ItemDefinition.Fragments)
+	{
+		if (FItemFragment* FragmentPtr = Fragment.GetMutablePtr<FItemFragment>())
+		{
+			FragmentPtr->Roll();
 		}
 	}
 }

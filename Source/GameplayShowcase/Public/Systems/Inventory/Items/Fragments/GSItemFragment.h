@@ -10,6 +10,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "GSItemFragment.generated.h"
 
+class IAbilitySystemInterface;
 class AGSPlayerCharacterBase;
 class UTextBlock;
 class UGSItemTooltip;
@@ -21,10 +22,10 @@ class AGSEquipItemActor;
 UENUM(BlueprintType)
 enum class EEquipmentSocket : uint8
 {
-	NONE,
-	weapon_1H		UMETA(DisplayName="weapon_1H"),
-	weapon_2H		UMETA(DisplayName="weapon_2H"),
-	weapon_Dagger	UMETA(DisplayName="weapon_Dagger")
+	None			UMETA(DisplayName ="None"),
+	Weapon_1H		UMETA(DisplayName="One-handed weapon"),
+	Weapon_2H		UMETA(DisplayName="Two-handed weapon"),
+	Weapon_Dagger	UMETA(DisplayName="Dagger")
 };
 
 /**
@@ -43,6 +44,7 @@ struct FItemFragment
 	virtual ~FItemFragment() = default;
 
 	virtual void LoadData() {};
+	virtual void Roll() {};
 	
 protected:
 	template <typename AssetType>
@@ -75,7 +77,7 @@ protected:
 		DataHandle = Manager.RequestSyncLoad(Path);
 	}
 
-	FActiveGameplayEffectHandle ApplyGameplayEffect(AGSPlayerCharacterBase* OwningChar, TSoftClassPtr<UGameplayEffect> GameplayEffect,
+	FActiveGameplayEffectHandle ApplyGameplayEffect(IAbilitySystemInterface*, TSoftClassPtr<UGameplayEffect> GameplayEffect,
 							const TMap<FGameplayTag, int32>& TagsToMagnitude);
 	
 	TSharedPtr<FStreamableHandle> DataHandle;
@@ -87,28 +89,25 @@ struct FStackableFragment : public FItemFragment
 {
 	GENERATED_BODY()
 
-	/** Gets random number between MinStack and MaxStack (inclusive) when first used and save to DrawnStackNum */
+	/** Gets random number from StackRange when first used and save to DrawnStackNum */
 	FORCEINLINE int32 GetStackNum()
 	{
 		if (!bAlreadyDrawn)
 		{
 			bAlreadyDrawn = true;
-			DrawnStackNum = FMath::RandRange(MinStackNum, MaxStackNum);
-		}
-		
-		return DrawnStackNum;
+			RolledStackNum = FMath::RandRange(StackRange.Min, StackRange.Max);
+		}	
+		return RolledStackNum;
 	}
 
-	FORCEINLINE void SetNewStackNum(int32 Num) { DrawnStackNum = FMath::Max(Num, 1); }
+	FORCEINLINE void SetNewStackNum(int32 Num) { RolledStackNum = FMath::Max(Num, 1); }
 	
 private:	
-	UPROPERTY(EditAnywhere)
-	int32 MinStackNum = 0;
-	UPROPERTY(EditAnywhere)
-	int32 MaxStackNum = 0;
-
+	UPROPERTY(EditAnywhere, meta=(ClampMin="0"))
+	FInt32Interval StackRange = FInt32Interval(0, 0);
+	
 	bool bAlreadyDrawn = false;
-	int32 DrawnStackNum = 0;
+	int32 RolledStackNum = 0;
 };
 
 
@@ -121,7 +120,7 @@ struct FWidgetFragment : public FItemFragment
 
 protected:
 	void SetTextFont(UTextBlock* TextBlock) const;
-	void AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text) const;
+	void AdaptTextBlock(UGSItemTooltip* ItemTooltip, const FText& Text, const FLinearColor& TextColor) const;
 };
 
 
@@ -133,7 +132,7 @@ struct FConsumableFragment : public FWidgetFragment
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
 	virtual void LoadData() override;
 
-	void Consume(AGSPlayerCharacterBase* OwningChar);
+	void Consume(IAbilitySystemInterface* OwningChar);
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -202,9 +201,10 @@ struct FEquipModifier : public FWidgetFragment
 {
 	GENERATED_BODY()
 
-	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) {};
-	virtual void OnUnequip(AGSPlayerCharacterBase* OwningChar);
-	FORCEINLINE void SetUpgradeLevel(int32 InUpgradeLevel) { UpgradeLevel = InUpgradeLevel; };
+	virtual void OnEquip(IAbilitySystemInterface* OwningChar) {};
+	virtual void OnUnequip(IAbilitySystemInterface* OwningChar);
+	
+	FORCEINLINE void SetUpgradeLevel(int32 InUpgradeLevel) { CachedUpgradeLevel = InUpgradeLevel; };
 	
 protected:	
 	int32 GetCurveValue(const UCurveTable* CurveTable, const FName& RowName) const;
@@ -212,7 +212,7 @@ protected:
 	FActiveGameplayEffectHandle ActiveGE;
 	
 private:
-	int32 UpgradeLevel = 0;
+	int32 CachedUpgradeLevel = 0;
 };
 
 
@@ -222,7 +222,7 @@ struct FDamageModifier : public FEquipModifier
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
+	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
 	virtual void LoadData() override;
 	
 private:
@@ -240,7 +240,7 @@ struct FDefenceModifier : public FEquipModifier
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
+	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
 	virtual void LoadData() override;
 	
 private:
@@ -257,7 +257,7 @@ struct FAttackSpeedModifier : public FEquipModifier
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
+	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
 	virtual void LoadData() override;
 	
 private:
@@ -274,11 +274,15 @@ struct FAttributeEntry
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
+	bool bGuaranteed = false;
+	
+	UPROPERTY(EditAnywhere)
 	FGameplayTag AttributeTag;
 
-	UPROPERTY(EditAnywhere)
-	FInt32Interval ValueRange;
+	UPROPERTY(EditAnywhere, meta=(ClampMin=1))
+	FInt32Interval MagnitudeRange = FInt32Interval(1, 1);
 
+	bool bAccepted = false;
 	int32 RolledValue = 0;
 };
 
@@ -288,8 +292,9 @@ struct FAttributeModifier : public FEquipModifier
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void OnEquip(AGSPlayerCharacterBase* OwningChar) override;
+	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
 	virtual void LoadData() override;
+	virtual void Roll() override;
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -297,6 +302,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TArray<FAttributeEntry> Attributes;
+
+	int32 AcceptedAttributesNum = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -304,9 +311,14 @@ struct FEquipmentFragment : public FWidgetFragment
 {
 	GENERATED_BODY()
 	
-	void OnEquip(AGSPlayerCharacterBase* OwningChar);
-	void OnUnequip(AGSPlayerCharacterBase* OwningChar);
+	void OnEquip(IAbilitySystemInterface* OwningChar);
+	void OnUnequip(IAbilitySystemInterface* OwningChar);
+	
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
+	virtual void Roll() override;
+
+	FORCEINLINE int32 GetUpgradeLevel() const { return UpgradeLevel; };
+	FORCEINLINE EEquipmentSocket GetEquipmentSocket() const { return SocketAttachPoint; }
 	
 	AGSEquipItemActor* GetEquippedActor() const;
 	AGSEquipItemActor* SpawnEquipmentActor(USkeletalMeshComponent* AttachMesh);
@@ -314,19 +326,17 @@ struct FEquipmentFragment : public FWidgetFragment
 
 	virtual void LoadData() override;
 	
-	UPROPERTY(EditAnywhere)
-	int32 UpgradeLevel = 0;
-	
 private:
 	FName GetSocketEnumShortName() const;
 
-	bool bEquipped = false;
-	
 	UPROPERTY(EditAnywhere, meta=(ExcludeBaseStruct))
 	TArray<TInstancedStruct<FEquipModifier>> EquipModifiers;
+		
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCurveFloat> UpgradeLevelDropChance;
 
 	UPROPERTY(EditAnywhere)
-	EEquipmentSocket SocketAttachPoint = EEquipmentSocket::NONE;
+	EEquipmentSocket SocketAttachPoint = EEquipmentSocket::None;
 
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<UStaticMesh> EquipMesh = nullptr;
@@ -334,5 +344,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSoftClassPtr<AGSEquipItemActor> EquipActorClass = nullptr;
 
-	TWeakObjectPtr<AGSEquipItemActor> EquippedActor = nullptr;	
+	TWeakObjectPtr<AGSEquipItemActor> EquippedActor = nullptr;
+	
+	int32 UpgradeLevel = 0;
+	bool bEquipped = false;
 };

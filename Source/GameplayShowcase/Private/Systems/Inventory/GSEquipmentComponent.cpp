@@ -6,7 +6,6 @@
 #include "GSBlueprintFunctionLibrary.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
-#include "Systems/Inventory/Items/GSEquipItemActor.h"
 #include "Systems/Inventory/Items/GSItemInstance.h"
 #include "Systems/Inventory/Items/GSItemTags.h"
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
@@ -21,19 +20,19 @@ void UGSEquipmentComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningCharacter = Cast<AGSPlayerCharacterBase>(GetOwner());
-	InventoryComponent = UGSInventoryComponent::FindInventoryComponent(OwningCharacter.Get());
-	if (OwningCharacter.IsValid())
+	CachedOwnerChar = Cast<AGSPlayerCharacterBase>(GetOwner());
+	if (AGSPlayerCharacterBase* OwnerChar = CachedOwnerChar.Get())
 	{
-		OwnerSkeletalMesh = OwningCharacter->GetMesh();
+		CachedInventoryComponent = UGSInventoryComponent::FindInventoryComponent(OwnerChar);
+		CachedOwnerSkeletalMesh = OwnerChar->GetMesh();
 	}
-
-	InitInventoryComponent();
+	
+	BindToInventoryComponent();
 }
 
-void UGSEquipmentComponent::InitInventoryComponent()
+void UGSEquipmentComponent::BindToInventoryComponent()
 {
-	if (UGSInventoryComponent* InvComponent = InventoryComponent.Get())
+	if (UGSInventoryComponent* InvComponent = CachedInventoryComponent.Get())
 	{
 		InvComponent->TryEquipItemDelegate.BindUObject(this, &UGSEquipmentComponent::TryEquipItem);
 		InvComponent->UnequipItemDelegate.BindUObject(this, &UGSEquipmentComponent::UnequipItem);
@@ -42,6 +41,11 @@ void UGSEquipmentComponent::InitInventoryComponent()
 
 bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 {
+	if (!EquippedItem)
+	{
+		return false;
+	}
+	
 	FItemDefinition& ItemDefinition = EquippedItem->GetItemDefinitionMutable();
 	if (!CheckIfCanEquipItem(ItemDefinition))
 	{
@@ -50,7 +54,7 @@ bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 	
 	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.FindFragmentByTypeMutable<FEquipmentFragment>())
 	{
-		EquipmentFragment->OnEquip(OwningCharacter.Get());
+		EquipmentFragment->OnEquip(CachedOwnerChar.Get());
 		// SpawnEquippedActor can return nullptr, it means that equipped item doesn't have in word representation,
 		// but we need to add it to EquippedActors to check later if this type of item is equipped.
 		AGSEquipItemActor* SpawnedActor = SpawnEquippedActor(EquipmentFragment);
@@ -60,10 +64,10 @@ bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 	return false;
 }
 
-bool UGSEquipmentComponent::CheckIfCanEquipItem(const FItemDefinition& ItemDefinition)
+bool UGSEquipmentComponent::CheckIfCanEquipItem(const FItemDefinition& ItemDefinition) const
 {
-	// Check if Player has required Level
-	if (const AGSPlayerCharacterBase* PlayerChar = OwningCharacter.Get())
+	// Validate level requirement
+	if (const AGSPlayerCharacterBase* PlayerChar = CachedOwnerChar.Get())
 	{
 		if (ItemDefinition.Level > PlayerChar->GetPlayerLevel())
 		{
@@ -73,32 +77,36 @@ bool UGSEquipmentComponent::CheckIfCanEquipItem(const FItemDefinition& ItemDefin
 	
 	// Check if there is already equipped item
 	const FGameplayTag ItemType = ItemDefinition.Type;
-	FGameplayTag TagToCheck = ItemType;
+	FGameplayTag SlotToCheck = ItemType;
+
+	// Weapons and Armors have additional subcategory (one-handed, heavy etc.)
 	if (ItemDefinition.Type.MatchesTag(GSItemTags::Type::Weapon.GetTag())
 		|| ItemDefinition.Type.MatchesTag(GSItemTags::Type::Armor.GetTag()))
 	{
-		TagToCheck = ItemType.RequestDirectParent();
-	}	
-	if (EquippedActors.Contains(TagToCheck))
-	{
-		return false;
+		SlotToCheck = ItemType.RequestDirectParent();
 	}
-	return true;
+
+	return !EquippedActors.Contains(SlotToCheck);
 }
 
 void UGSEquipmentComponent::UnequipItem(FItemInstance* UnequippedItem)
 {
+	if (!UnequippedItem)
+	{
+		return;
+	}
+	
 	FItemDefinition& ItemDefinition = UnequippedItem->GetItemDefinitionMutable();
 	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.FindFragmentByTypeMutable<FEquipmentFragment>())
 	{
-		EquipmentFragment->OnUnequip(OwningCharacter.Get());        	
+		EquipmentFragment->OnUnequip(CachedOwnerChar.Get());        	
         RemoveEquippedActor(ItemDefinition.Type.RequestDirectParent(), EquipmentFragment);
 	}
 }
 
-AGSEquipItemActor* UGSEquipmentComponent::SpawnEquippedActor(FEquipmentFragment* EquipmentFragment) const
+AGSEquipItemActor* UGSEquipmentComponent::SpawnEquippedActor(FEquipmentFragment* EquipmentFragment)
 {
-	AGSEquipItemActor* SpawnedActor = EquipmentFragment->SpawnEquipmentActor(OwnerSkeletalMesh.Get());
+	AGSEquipItemActor* SpawnedActor = EquipmentFragment->SpawnEquipmentActor(CachedOwnerSkeletalMesh.Get());
 	return SpawnedActor;
 }
 

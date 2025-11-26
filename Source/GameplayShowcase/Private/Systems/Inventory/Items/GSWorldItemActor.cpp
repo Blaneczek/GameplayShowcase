@@ -61,7 +61,7 @@ void AGSWorldItemActor::BeginPlay()
 
 	if (bLoadDataManually)
 	{
-		ItemComponent->LoadDefinition();
+		ItemComponent->LoadItemDefinition();
 	}
 }
 

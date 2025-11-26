@@ -97,3 +97,8 @@ void UGSOverlayWidgetController::SetCanvasPanelRef(UCanvasPanel* CanvasPanel)
 	CanvasRef = CanvasPanel;
 }
 
+void UGSOverlayWidgetController::OnItemPickUpMessage(const FText& Message)
+{
+	OnPickUpMessageAdded.Broadcast(Message);
+}
+

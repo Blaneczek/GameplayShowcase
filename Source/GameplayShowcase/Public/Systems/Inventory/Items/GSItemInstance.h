@@ -6,6 +6,9 @@
 #include "Systems/Inventory/Items/Data/GSItemDefinition.h"
 #include "GSItemInstance.generated.h"
 
+DECLARE_DELEGATE_OneParam(FOnItemLoadedSignature, const FItemInstance* /*ItemInstance*/);
+
+struct FStreamableHandle;
 /**
  * Runtime instance of an item with unique ID.
  * Wraps an FItemDefinition with instance-specific data like stack count and GUID.
@@ -21,8 +24,8 @@ struct FItemInstance
 	FORCEINLINE const FItemDefinition& GetItemDefinition() const {return ItemDefinition; }
 	FORCEINLINE FItemDefinition& GetItemDefinitionMutable() { return ItemDefinition; }
 	
-	/** Checks if this instance has a valid item definition. */
-	FORCEINLINE bool IsValidDefinition() const { return ItemDefinition.Name.IsValid() && InstanceID.IsValid(); }
+	/** Checks if this instance is valid. */
+	FORCEINLINE bool IsValidInstance() const { return ItemDefinition.IsValidDefinition() && InstanceID.IsValid(); }
 
 	/** Gets the current stack count. */
 	FORCEINLINE int32 GetStackCount() const { return StackCount; };
@@ -58,11 +61,15 @@ struct FItemInstance
 	 * @param InitialStackCount		Starting stack count
 	 */
 	void Initialize(const FItemDefinition& NewItemDefinition, int32 InitialStackCount);
-	
-private:
+
 	/** Load data for all fragments in the item definition. */
 	void LoadItemData();
-
+	
+	FOnItemLoadedSignature OnItemLoaded;
+	
+private:
+	void OnAssetsLoaded();
+	
 	UPROPERTY(EditAnywhere)
 	FItemDefinition ItemDefinition;
 
@@ -72,6 +79,8 @@ private:
 
 	/** Unique identifier for this specific item instance. */
 	UPROPERTY()
-	FGuid InstanceID; 
+	FGuid InstanceID;
+
+	TSharedPtr<FStreamableHandle> LoadHandle;
 };
 

@@ -117,6 +117,7 @@ void UGSInventoryComponent::TryAddItem()
 	if (TryAddNewItemToStack(Def))
 	{
 		It.RemoveCurrent();
+		ItemComponent->ItemPickedUp();
 		if (AActor* ItemActor = ItemComponent->GetOwner())
 		{
 			ItemActor->Destroy();
@@ -128,6 +129,7 @@ void UGSInventoryComponent::TryAddItem()
 	if (TryAddNewItem(Def))
 	{
 		It.RemoveCurrent();
+		ItemComponent->ItemPickedUp();
 		if (AActor* ItemActor = ItemComponent->GetOwner())
 		{
 			ItemActor->Destroy();
@@ -284,9 +286,15 @@ bool UGSInventoryComponent::TryAddNewItem(FItemDefinition& Def)
 	if (InvController->FindFreeSpace(ItemSize, GridInfo))
 	{
 		FItemInstance NewInstance = CreateItemInstance(Def);
-		ItemInstances.Add(MoveTemp(NewInstance));
+		int32 Index = ItemInstances.Add(TInstancedStruct<FItemInstance>::Make(MoveTemp(NewInstance)));
+		FItemInstance& StoredInstance = ItemInstances[Index].GetMutable();
 		
-		OnItemInstanceAddedDelegate.ExecuteIfBound(&ItemInstances.Last(), GridInfo);
+		// Wait to load all assets before adding to widget
+		StoredInstance.OnItemLoaded.BindWeakLambda(this, [this, GridInfo](const FItemInstance* Item)
+		{
+			OnItemInstanceAddedDelegate.ExecuteIfBound(Item, GridInfo);
+		});
+		StoredInstance.LoadItemData();		
 		return true;
 	}
 	return false;
@@ -318,9 +326,13 @@ void UGSInventoryComponent::RemoveItemInstance(FItemInstance* Item)
 
 void UGSInventoryComponent::RemoveItemInstance(const FGuid& ItemID)
 {
-	const int32 RemovedCount = ItemInstances.RemoveAll([&ItemID](const FItemInstance& Instance)
+	const int32 RemovedCount = ItemInstances.RemoveAll([&ItemID](const TInstancedStruct<FItemInstance>& InstStruct)
 	{
-		return Instance.GetInstanceID() == ItemID;
+		if (const FItemInstance* Instance = InstStruct.GetPtr<FItemInstance>())
+		{
+			return Instance->GetInstanceID() == ItemID;
+		}
+		return false;
 	});
 	
 	if (RemovedCount > 0)
@@ -394,11 +406,14 @@ FItemInstance* UGSInventoryComponent::FindItemInstanceByNameTag(const FGameplayT
 
 FItemInstance* UGSInventoryComponent::FindItemInstanceByPredicate(TFunctionRef<bool(const FItemInstance&)> Predicate)
 {
-	for (FItemInstance& Instance : ItemInstances)
+	for (auto& Instance : ItemInstances)
 	{
-		if (Predicate(Instance))
+		if (FItemInstance* InstancePtr = Instance.GetMutablePtr<FItemInstance>())
 		{
-			return &Instance;
+			if (Predicate(*InstancePtr))
+			{
+				return InstancePtr;
+			}
 		}
 	}
 	return nullptr;

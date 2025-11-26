@@ -96,9 +96,9 @@ void FConsumableFragment::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 	AdaptTextBlock(ItemTooltip, Text, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
-void FConsumableFragment::LoadData()
+void FConsumableFragment::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
 {
-	LoadAsync(ConsumeEffect);
+	Paths.Add(ConsumeEffect.ToSoftObjectPath());
 }
 
 void FConsumableFragment::Consume(IAbilitySystemInterface* Target)
@@ -114,9 +114,9 @@ void FConsumableFragment::Consume(IAbilitySystemInterface* Target)
 // FImageFragment
 // ============================================================================
 
-void FImageFragment::LoadData()
+void FImageFragment::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
 {
-	LoadSync(Icon);
+	Paths.Add(Icon.ToSoftObjectPath());
 }
 
 // ============================================================================
@@ -167,11 +167,6 @@ void FDamageModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 	AdaptTextBlock(ItemTooltip, TextMagicAttack, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
-void FDamageModifier::LoadData()
-{
-	LoadAsync(DamageModifierEffect);	
-}
-
 void FDamageModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 {
 	const TMap<FGameplayTag, int32> TagsToMagnitude
@@ -182,6 +177,11 @@ void FDamageModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 		{ GSGameplayTags::Attributes::Primary_MagicDamageMax.GetTag(), GetCurveValue(DamageCurveTable, TEXT("MaxMagicAttack")) },
 	};
 	ActiveGE = ApplyGameplayEffect(OwningChar, DamageModifierEffect, TagsToMagnitude);
+}
+
+void FDamageModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
+{
+	Paths.Add(DamageModifierEffect.ToSoftObjectPath());
 }
 
 // ============================================================================
@@ -209,9 +209,9 @@ void FDefenceModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 	ActiveGE = ApplyGameplayEffect(OwningChar, DefenceModifierEffect, TagsToMagnitude);
 }
 
-void FDefenceModifier::LoadData()
+void FDefenceModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
 {
-	LoadAsync(DefenceModifierEffect);	
+	Paths.Add(DefenceModifierEffect.ToSoftObjectPath());
 }
 
 // ============================================================================
@@ -233,10 +233,11 @@ void FAttackSpeedModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 	ActiveGE = ApplyGameplayEffect(OwningChar, AttackSpeedModifierEffect, TagsToMagnitude);
 }
 
-void FAttackSpeedModifier::LoadData()
+void FAttackSpeedModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
 {
-	LoadAsync(AttackSpeedModifierEffect);
+	Paths.Add(AttackSpeedModifierEffect.ToSoftObjectPath());
 }
+
 
 // ============================================================================
 // FAttributeModifier
@@ -273,9 +274,9 @@ void FAttributeModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 	ActiveGE = ApplyGameplayEffect(OwningChar, AttributeModifierEffect, TagsToMagnitude);
 }
 
-void FAttributeModifier::LoadData()
+void FAttributeModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
 {
-	LoadAsync(AttributeModifierEffect);	
+	Paths.Add(AttributeModifierEffect.ToSoftObjectPath());
 }
 
 void FAttributeModifier::Roll()
@@ -319,18 +320,19 @@ void FEquipmentFragment::Roll()
 	}
 }
 
-void FEquipmentFragment::LoadData()
+void FEquipmentFragment::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
 {
-	LoadAsync(EquipActorClass);
-	LoadAsync(EquipMesh);
+	Paths.Add(EquipActorClass.ToSoftObjectPath());
+	Paths.Add(EquipMesh.ToSoftObjectPath());
+	
 	for (auto& Modifier : EquipModifiers)
-    {
-    	if (FEquipModifier* ModifierRef = Modifier.GetMutablePtr())
-    	{
-    		ModifierRef->LoadData();
-            ModifierRef->SetUpgradeLevel(UpgradeLevel);
-    	}	
-    }
+	{
+		if (FEquipModifier* ModifierRef = Modifier.GetMutablePtr())
+		{
+			ModifierRef->AddSoftObjectPath(Paths);
+			ModifierRef->SetUpgradeLevel(UpgradeLevel);
+		}	
+	}
 }
 
 void FEquipmentFragment::OnEquip(IAbilitySystemInterface* Target)

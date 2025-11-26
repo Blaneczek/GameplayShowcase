@@ -8,7 +8,7 @@
 #include "GSItemsInfo.generated.h"
 
 /**
- * 
+ * Data asset for game items
  */
 UCLASS()
 class GAMEPLAYSHOWCASE_API UGSItemsInfo : public UPrimaryDataAsset

@@ -4,11 +4,13 @@
 #include "Systems/Inventory/Items/GSItemComponent.h"
 
 #include "GameplayShowcase.h"
+#include "GSBlueprintFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Inventory/Items/Data/GSItemDataSubsystem.h"
 #include "Systems/Inventory/GSInventoryHelper.h"
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "UI/Controllers/GSOverlayWidgetController.h"
 
 UGSItemComponent::UGSItemComponent()
 {
@@ -18,34 +20,14 @@ UGSItemComponent::UGSItemComponent()
 	SetCollisionObjectType(ECC_WorldDynamic);
 	SetCollisionResponseToAllChannels(ECR_Ignore);
 	SetCollisionResponseToChannel(ECC_PlayerChar, ECR_Overlap);
-
 	SetGenerateOverlapEvents(true);
+
+	InitSphereRadius(100.0f);
 }
 
 UGSItemComponent* UGSItemComponent::FindItemComponent(const AActor* Actor)
 {
 	return Actor ? Actor->FindComponentByClass<UGSItemComponent>() : nullptr;
-}
-
-void UGSItemComponent::MoveItemDefinition(FItemDefinition&& Def)
-{
-	ItemDefinition = MoveTemp(Def);
-	OnItemDefinitionSet.ExecuteIfBound();
-}
-
-void UGSItemComponent::LoadDefinition()
-{
-	if (UGSItemDataSubsystem* ItemDataSubsystem = UGameplayStatics::GetGameInstance(this)->GetSubsystem<UGSItemDataSubsystem>())
-	{
-		// If data is already loaded, get item
-		SetItemDefinition(ItemDataSubsystem);
-		
-		// If data is not yet loaded, wait for callback
-		if (!bDefinitionSet)
-		{
-			ItemDataSubsystem ->OnItemDataLoadedDelegate.AddUniqueDynamic(this, &UGSItemComponent::SetItemDefinition);
-		}		
-	}
 }
 
 void UGSItemComponent::BeginPlay()
@@ -56,37 +38,100 @@ void UGSItemComponent::BeginPlay()
     OnComponentEndOverlap.AddDynamic(this, &UGSItemComponent::PickUpZoneLeft);
 }
 
-void UGSItemComponent::SetItemDefinition(UGSItemDataSubsystem* ItemDataSubsystem)
+void UGSItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (const FItemDefinition* Def = ItemDataSubsystem->GetItemDefinitionByTag(ItemTag))
+	if (UGSItemDataSubsystem* ItemDataSubsystem = UGameplayStatics::GetGameInstance(this)->GetSubsystem<UGSItemDataSubsystem>())
+	{
+		ItemDataSubsystem->OnItemDataLoaded.RemoveAll(this);
+	}
+	Super::EndPlay(EndPlayReason);
+}
+
+void UGSItemComponent::MoveItemDefinition(FItemDefinition&& Def)
+{
+	if (!Def.IsValidDefinition())
+	{
+		return;
+	}
+	
+	ItemDefinition = MoveTemp(Def);
+	OnItemDefinitionSet.ExecuteIfBound();
+}
+
+void UGSItemComponent::LoadItemDefinition()
+{
+	if (!ItemTag.IsValid())
+	{
+		return;
+	}
+	
+	if (UGSItemDataSubsystem* ItemDataSubsystem = UGameplayStatics::GetGameInstance(this)->GetSubsystem<UGSItemDataSubsystem>())
+	{
+		if (ItemDataSubsystem->IsDataLoaded())
+		{
+			// If data is already loaded, get item
+			OnItemDataLoaded(ItemDataSubsystem);
+		}
+		else
+		{
+			// Wait for data to load
+			ItemDataSubsystem ->OnItemDataLoaded.AddUObject(this, &UGSItemComponent::OnItemDataLoaded);
+		}	
+	}
+}
+
+void UGSItemComponent::OnItemDataLoaded(UGSItemDataSubsystem* ItemDataSubsystem)
+{
+	if (!ItemDataSubsystem)
+	{
+		return;
+	}
+	
+	if (const FItemDefinition* Def = ItemDataSubsystem->FindItemDefinition(ItemTag))
 	{
 		ItemDefinition = *Def;
 		if (bRandomizeItem)
 		{
 			RandomizeItem();
 		}
-		ItemDataSubsystem->OnItemDataLoadedDelegate.RemoveAll(this);
-		bDefinitionSet = true;
 		OnItemDefinitionSet.ExecuteIfBound();
+		
+		ItemDataSubsystem->OnItemDataLoaded.RemoveAll(this);	
+	}
+}
+
+void UGSItemComponent::RandomizeItem()
+{
+	if (!ItemDefinition.IsValidDefinition())
+	{
+		return;
+	}
+	
+	for (auto& Fragment : ItemDefinition.Fragments)
+	{
+		if (FItemFragment* FragmentPtr = Fragment.GetMutablePtr<FItemFragment>())
+		{
+			FragmentPtr->Roll();
+		}
 	}
 }
 
 void UGSItemComponent::PickUpZoneEntered(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	HandlePickUpOverlap(OtherActor, true);
+	HandlePickUpZoneOverlap(OtherActor, true);
 }
 
 void UGSItemComponent::PickUpZoneLeft(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 
 {
-	HandlePickUpOverlap(OtherActor, false);
+	HandlePickUpZoneOverlap(OtherActor, false);
 }
 
-void UGSItemComponent::HandlePickUpOverlap(AActor* OtherActor, bool bEntered)
+void UGSItemComponent::HandlePickUpZoneOverlap(AActor* OtherActor, bool bEntered)
 {
-	if (!OtherActor)
+	if (!OtherActor || !ItemDefinition.IsValidDefinition())
 	{
 		return;
 	}
@@ -100,17 +145,18 @@ void UGSItemComponent::HandlePickUpOverlap(AActor* OtherActor, bool bEntered)
 	}
 }
 
-void UGSItemComponent::RandomizeItem()
+void UGSItemComponent::ItemPickedUp()
 {
-	for (auto& Fragment : ItemDefinition.Fragments)
+	if (!ItemDefinition.IsValidDefinition())
 	{
-		if (FItemFragment* FragmentPtr = Fragment.GetMutablePtr<FItemFragment>())
-		{
-			FragmentPtr->Roll();
-		}
+		return;
 	}
+	
+	if (UGSOverlayWidgetController* OverlayController = UGSBlueprintFunctionLibrary::GetOverlayWidgetController(this))
+	{
+		OverlayController->OnItemPickUpMessage(UGSBlueprintFunctionLibrary::GetGameplayTagAsText(ItemDefinition.Name));
+	}		
 }
-
 
 
 

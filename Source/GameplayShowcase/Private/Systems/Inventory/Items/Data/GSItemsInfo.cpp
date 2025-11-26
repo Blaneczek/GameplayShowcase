@@ -16,7 +16,7 @@ FItemDefinition UGSItemsInfo::FindItemDefinitionByTag(const FGameplayTag& Tag) c
 		return *FoundItem;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("UGSItemsInfo::FindItemDefinitionByTag | Item with tah [%s] was not found."), *Tag.ToString());
+	UE_LOG(LogTemp, Warning, TEXT("UGSItemsInfo::FindItemDefinitionByTag | Item with tag [%s] was not found."), *Tag.ToString());
 	return FItemDefinition();
 }
 

@@ -68,7 +68,7 @@ public:
 	FItemInstance* FindItemInstanceByPredicate(TFunctionRef<bool(const FItemInstance&)> Predicate);
 
 	/** Gets all item instances in inventory. */
-	FORCEINLINE const TArray<FItemInstance>& GetAllItems() const { return ItemInstances; }
+	FORCEINLINE const TArray<TInstancedStruct<FItemInstance>>& GetAllItems() const { return ItemInstances; }
 
 	/** Attempts to pick up item on the floor. */
 	void TryAddItem();
@@ -134,7 +134,7 @@ private:
 
 	/** All items currently in inventory. */
 	UPROPERTY()
-	TArray<FItemInstance> ItemInstances;
+	TArray<TInstancedStruct<FItemInstance>> ItemInstances;
 
 	/** Cached reference to owning character. */
 	TWeakObjectPtr<AGSPlayerCharacterBase> OwningCharacter;

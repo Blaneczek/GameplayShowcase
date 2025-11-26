@@ -9,43 +9,120 @@ void UGSItemDataSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
 
+	// Number of items in the game
+	ItemDefinitions.Reserve(50);
 	LoadItemsData();
 }
 
-const FItemDefinition* UGSItemDataSubsystem::GetItemDefinitionByTag(const FGameplayTag& ItemTag) const
+void UGSItemDataSubsystem::Deinitialize()
 {
-	if (const FItemDefinition* Item = ItemDefinitions.Find(ItemTag))
+	if (LoadHandle.IsValid())
 	{
-		return Item;
+		LoadHandle->ReleaseHandle();
+		LoadHandle.Reset();
 	}
-	return nullptr;
+	ItemDefinitions.Empty();
+	
+	Super::Deinitialize();
+}
+
+const FItemDefinition* UGSItemDataSubsystem::FindItemDefinition(const FGameplayTag& ItemName) const
+{
+	return ItemDefinitions.Find(ItemName);
 }
 
 void UGSItemDataSubsystem::LoadItemsData()
 {
-	UAssetManager& Manager = UAssetManager::Get();
-	TArray<FPrimaryAssetId> AssetIds;
-	Manager.GetPrimaryAssetIdList(FPrimaryAssetType("GameItems"), AssetIds);
-
-	NumAssets = AssetIds.Num();
-	
-	for (const FPrimaryAssetId& Id : AssetIds)
+	if (LoadHandle.IsValid() && LoadHandle->IsLoadingInProgress())
 	{
-		Manager.LoadPrimaryAsset(Id, {}, FStreamableDelegate::CreateLambda([this, Id]()
-		{
-			UObject* LoadedObj = UAssetManager::Get().GetPrimaryAssetObject(Id);
-			if (UGSItemsInfo* DataAsset = Cast<UGSItemsInfo>(LoadedObj))
-			{
-				for (const FItemDefinition& Item : DataAsset->Items)
-				{
-					ItemDefinitions.Add(Item.Name, Item);
-				}
-			}
-			
-			if (--NumAssets == 0)
-			{
-				OnItemDataLoadedDelegate.Broadcast(this);
-			}		
-		}));
+		return;
 	}
+
+	ItemDefinitions.Empty();
+	bDataLoaded = false;
+	TotalAssets = 0;
+
+	const UAssetManager& AssetManager = UAssetManager::Get();
+	TArray<FPrimaryAssetId> AssetIds;
+	AssetManager.GetPrimaryAssetIdList(FPrimaryAssetType("GameItems"), AssetIds);
+
+	TotalAssets = AssetIds.Num();
+	if (TotalAssets == 0)
+	{
+		FinalizeLoading();
+		return;
+	}
+
+	TArray<FSoftObjectPath> AssetPaths;
+	AssetPaths.Reserve(TotalAssets);
+	for (const auto& Id : AssetIds)
+	{
+		AssetPaths.Add(AssetManager.GetPrimaryAssetPath(Id));
+	}
+
+	FStreamableManager& StreamableManager = AssetManager.GetStreamableManager();
+	LoadHandle = StreamableManager.RequestAsyncLoad(
+		AssetPaths,
+		FStreamableDelegate::CreateUObject(this, &UGSItemDataSubsystem::OnAssetsLoaded),
+		FStreamableManager::AsyncLoadHighPriority,
+		false
+	);
+	
+	if (!LoadHandle.IsValid())
+	{
+		FinalizeLoading();
+	}
+}
+
+void UGSItemDataSubsystem::OnAssetsLoaded()
+{
+	if (!LoadHandle.IsValid())
+	{
+		FinalizeLoading();
+		return;
+	}
+
+	const UAssetManager& AssetManager = UAssetManager::Get();
+	TArray<FPrimaryAssetId> AssetIds;
+	AssetManager.GetPrimaryAssetIdList(FPrimaryAssetType("GameItems"), AssetIds);
+
+	AddLoadedAssets(AssetIds);
+	FinalizeLoading();
+}
+
+void UGSItemDataSubsystem::AddLoadedAssets(const TArray<FPrimaryAssetId>& LoadedAssetIds)
+{
+	const UAssetManager& AssetManager = UAssetManager::Get();	
+	for (const auto& Id : LoadedAssetIds)
+	{
+		UObject* LoadedObj = AssetManager.GetPrimaryAssetObject(Id);
+		if (!LoadedObj)
+		{
+			continue;
+		}
+		UGSItemsInfo* DataAsset = Cast<UGSItemsInfo>(LoadedObj);
+		if (!DataAsset)
+		{
+			continue;
+		}
+		if (DataAsset->Items.Num() == 0)
+		{
+			continue;
+		}
+
+		for (const auto& Item : DataAsset->Items)
+		{
+			if (!Item.IsValidDefinition() || ItemDefinitions.Contains(Item.Name))
+			{
+				continue;
+			}
+			ItemDefinitions.Add(Item.Name, Item);
+		}
+	}
+}
+
+void UGSItemDataSubsystem::FinalizeLoading()
+{
+	bDataLoaded = true;
+	OnItemDataLoaded.Broadcast(this);
 }

@@ -43,50 +43,18 @@ struct FItemFragment
 	FItemFragment& operator=(FItemFragment&&) = default;
 	virtual ~FItemFragment() = default;
 
-	/** Override to load required assets. */
-	virtual void LoadData() {};
+	/** Override to add object path for loading. */
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) {};
 
 	/** Override to randomize fragment data */
 	virtual void Roll() {};
 	
 protected:
-	/** Loads asset asynchronously using soft references. */
-	template <typename AssetType>
-	requires TIsDerivedFrom<AssetType, TSoftObjectPtr<typename AssetType::ElementType>>::Value
-	|| TIsDerivedFrom<AssetType, TSoftClassPtr<typename AssetType::ElementType>>::Value
-	void LoadAsync(const AssetType& Asset)
-	{
-		if (Asset.IsNull())
-		{
-			return;
-		}
-		
-		FStreamableManager& Manager = UAssetManager::GetStreamableManager();
-		DataHandle = Manager.RequestAsyncLoad(Asset.ToSoftObjectPath());
-	}
-	
-	/** Loads asset synchronously using soft references. */
-	template <typename AssetType>
-	requires TIsDerivedFrom<AssetType, TSoftObjectPtr<typename AssetType::ElementType>>::Value
-	|| TIsDerivedFrom<AssetType, TSoftClassPtr<typename AssetType::ElementType>>::Value
-	void LoadSync(const AssetType& Asset)
-	{
-		if (Asset.IsNull())
-		{
-			return;
-		}
-		
-		FStreamableManager& Manager = UAssetManager::GetStreamableManager();
-		DataHandle = Manager.RequestSyncLoad(Asset.ToSoftObjectPath());
-	}
-
 	/** Applies a gameplay effect with SetByCaller magnitudes. */
 	FActiveGameplayEffectHandle ApplyGameplayEffect(
 		IAbilitySystemInterface* Target,
 		TSoftClassPtr<UGameplayEffect> GameplayEffect,
 		const TMap<FGameplayTag, int32>& TagsToMagnitude) const;
-	
-	TSharedPtr<FStreamableHandle> DataHandle;
 };
 
 
@@ -138,7 +106,7 @@ struct FConsumableFragment : public FWidgetFragment
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void LoadData() override;
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 
 	/** Applies consumption effect to target character. */
 	void Consume(IAbilitySystemInterface* Target);
@@ -200,7 +168,7 @@ struct FImageFragment : public FItemFragment
 {
 	GENERATED_BODY()
 	
-	virtual void LoadData() override;
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 	FORCEINLINE UTexture2D* GetIcon() const
 	{
@@ -249,7 +217,7 @@ struct FDamageModifier : public FEquipModifier
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
 	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
-	virtual void LoadData() override;
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -269,7 +237,7 @@ struct FDefenceModifier : public FEquipModifier
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
 	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
-	virtual void LoadData() override;
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -289,7 +257,7 @@ struct FAttackSpeedModifier : public FEquipModifier
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
 	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
-	virtual void LoadData() override;
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -336,7 +304,7 @@ struct FAttributeModifier : public FEquipModifier
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
 	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
-	virtual void LoadData() override;
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 	/** Draws attributes and their values that will be added to the item. */
 	virtual void Roll() override;
@@ -362,7 +330,7 @@ struct FEquipmentFragment : public FWidgetFragment
 	
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
     virtual void Roll() override;
-    virtual void LoadData() override;
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 	FORCEINLINE int32 GetUpgradeLevel() const { return UpgradeLevel; };
     FORCEINLINE EEquipmentSocket GetEquipmentSocket() const { return SocketAttachPoint; }

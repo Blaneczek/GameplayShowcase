@@ -11,6 +11,7 @@ class UCanvasPanel;
 class UGSLevelingComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FAttributeChangedSignature, float, NewValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPickUpMessageAddedSignature, const FText&, Message);
 
 /**
  * 
@@ -30,6 +31,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	FORCEINLINE UCanvasPanel* GetCanvasPanelRef() const { return CanvasRef.Get(); }
+
+	void OnItemPickUpMessage(const FText& Message);
 	
 	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
 	FAttributeChangedSignature OnHPChanged;
@@ -51,6 +54,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "GS|Attributes")
 	FAttributeChangedSignature OnXPPercentChangedDelegate;
-
+	
+	UPROPERTY(BlueprintAssignable, Category = "GS|Inventory")
+	FOnPickUpMessageAddedSignature OnPickUpMessageAdded;
+	
 	TWeakObjectPtr<UCanvasPanel> CanvasRef;
 };

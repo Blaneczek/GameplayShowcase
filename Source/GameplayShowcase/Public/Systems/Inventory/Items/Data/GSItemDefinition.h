@@ -26,6 +26,9 @@ struct FItemDefinition
 	FItemDefinition(FItemDefinition&&) noexcept = default;
 	FItemDefinition& operator=(FItemDefinition&&) noexcept = default;
 
+	/** Checks if item's Name tag is valid. */
+	FORCEINLINE bool IsValidDefinition() const { return Name.IsValid(); }
+	
 	/** Finds the first mutable fragment of the specified type, or nullptr if not found. */
 	template<typename FragmentType> requires TIsDerivedFrom<FragmentType, FItemFragment>::Value
 	FragmentType* FindFragmentByTypeMutable();

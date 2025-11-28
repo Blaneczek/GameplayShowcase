@@ -16,6 +16,11 @@ UGSEquipmentComponent::UGSEquipmentComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
+UGSEquipmentComponent* UGSEquipmentComponent::FindEquipmentComponent(AActor* Actor)
+{
+	return Actor ? Actor->FindComponentByClass<UGSEquipmentComponent>() : nullptr;
+}
+
 void UGSEquipmentComponent::BeginPlay()
 {
 	Super::BeginPlay();

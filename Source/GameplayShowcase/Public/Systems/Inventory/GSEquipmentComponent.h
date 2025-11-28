@@ -27,6 +27,9 @@ class GAMEPLAYSHOWCASE_API UGSEquipmentComponent : public UActorComponent
 public:
 	UGSEquipmentComponent();
 
+	/** Finds equipment component on an actor. Returns nullptr if not found. */
+	static UGSEquipmentComponent* FindEquipmentComponent(AActor* Actor);
+	
 	/** Checks if an equipment slot is currently occupied. */
 	FORCEINLINE bool IsSlotEquipped(const FGameplayTag& EquipType) const { return EquippedActors.Contains(EquipType); }
 

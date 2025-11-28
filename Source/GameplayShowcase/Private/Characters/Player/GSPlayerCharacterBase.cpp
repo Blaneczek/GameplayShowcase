@@ -9,6 +9,7 @@
 #include "Player/Camera/GSCameraComponent.h"
 #include "Player/Camera/GSSpringArmComponent.h"
 #include "Systems/AbilitySystem/GSGameplayTags.h"
+#include "Systems/Combat/GSCombatComponent.h"
 #include "Systems/Inventory/GSEquipmentComponent.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Leveling/GSLevelingComponent.h"
@@ -30,6 +31,7 @@ AGSPlayerCharacterBase::AGSPlayerCharacterBase()
 	LevelingComponent = CreateDefaultSubobject<UGSLevelingComponent>(TEXT("LevelingComponent"));
 	InventoryComponent = CreateDefaultSubobject<UGSInventoryComponent>(TEXT("InventoryComponent"));
 	EquipmentComponent = CreateDefaultSubobject<UGSEquipmentComponent>(TEXT("EquipmentComponent"));
+	CombatComponent = CreateDefaultSubobject<UGSCombatComponent>(TEXT("CombatComponent"));
 }
 
 void AGSPlayerCharacterBase::InitAbilityActorInfo()
@@ -53,7 +55,7 @@ void AGSPlayerCharacterBase::PossessedBy(AController* NewController)
 	
 	InitAbilityActorInfo();
 	InitializeAttributes();
-	AddAbilities(StartupAbilities);
+	AddAbilities(GeneralAbilities);
 }
 
 void AGSPlayerCharacterBase::BeginPlay()

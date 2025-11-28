@@ -4,11 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "AbilitySystemInterface.h"
-#include "Systems/AbilitySystem/Interfaces/GSAbilityCharacterHelper.h"
+#include "Systems/AbilitySystem/GSAbilityCharacterHelper.h"
 #include "GameFramework/Character.h"
 #include "Systems/Leveling/GSLevelingComponent.h"
 #include "GSPlayerCharacterBase.generated.h"
 
+class UGSCombatComponent;
 class USphereComponent;
 class UGSEquipmentComponent;
 class UGSInventoryComponent;
@@ -61,14 +62,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
 	TObjectPtr<UGSAttributeSetPlayer> AttributeSet;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UGSLevelingComponent> LevelingComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UGSInventoryComponent> InventoryComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UGSEquipmentComponent> EquipmentComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UGSCombatComponent> CombatComponent;
 
 	/*** Gameplay Effects ***/
 	
@@ -76,22 +80,21 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
 	TArray<TSubclassOf<UGameplayEffect>> DefaultAttributesEffectClasses;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Effects")
 	TSubclassOf<UGameplayEffect> STRegenEffectClass;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Effects")
 	TSubclassOf<UGameplayEffect> HPRegenEffectClass;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Effects")
 	TSubclassOf<UGameplayEffect> PERegenEffectClass;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Attributes")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Effects")
     float RegenDelay = 1.f;
 	
 	/************************/
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="GAS|Abilities")
-	TArray<TSubclassOf<UGameplayAbility>> StartupAbilities;
+	TArray<TSubclassOf<UGameplayAbility>> GeneralAbilities;
 
-	
 private:
 	void InitializeAttributes();
 	void AddAbilities(const TArray<TSubclassOf<UGameplayAbility>>& Abilities);
@@ -106,7 +109,6 @@ private:
 	void OnConsumingTagChanged(const FGameplayTag Tag, int32 NewCount, FTimerHandle& TimerHandle,
 								TSubclassOf<UGameplayEffect> EffectClass, const FGameplayTag& RegenTag);
 	
-
 	float DefaultMovementSpeed;
 
 	FTimerHandle IsMovingTimerHandle;

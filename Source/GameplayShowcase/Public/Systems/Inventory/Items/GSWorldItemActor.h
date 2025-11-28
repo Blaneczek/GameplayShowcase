@@ -19,12 +19,15 @@ public:
 	// Sets default values for this actor's properties
 	AGSWorldItemActor();
 
-	void SetItemDefinition(FItemDefinition&& Def);
+	void MoveItemDefinition(FItemDefinition&& Def);
 
 	FORCEINLINE UGSItemComponent* GetItemComponent() { return ItemComponent; }
-	
+
+	/** If set to true, ItemComponent will load data automatically in BeginPlay.
+	 *	ItemTag in ItemComponent must already be set.
+	 */
 	UPROPERTY(EditAnywhere)
-	bool bLoadDataManually = false;
+	bool bLoadDataAutomatically = false;
 	
 protected:
 	virtual void BeginPlay() override;

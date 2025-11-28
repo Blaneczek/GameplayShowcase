@@ -21,7 +21,6 @@ UGSItemComponent::UGSItemComponent()
 	SetCollisionResponseToAllChannels(ECR_Ignore);
 	SetCollisionResponseToChannel(ECC_PlayerChar, ECR_Overlap);
 	SetGenerateOverlapEvents(true);
-
 	InitSphereRadius(100.0f);
 }
 
@@ -131,7 +130,7 @@ void UGSItemComponent::PickUpZoneLeft(UPrimitiveComponent* OverlappedComponent, 
 
 void UGSItemComponent::HandlePickUpZoneOverlap(AActor* OtherActor, bool bEntered)
 {
-	if (!OtherActor || !ItemDefinition.IsValidDefinition())
+	if (!OtherActor)
 	{
 		return;
 	}

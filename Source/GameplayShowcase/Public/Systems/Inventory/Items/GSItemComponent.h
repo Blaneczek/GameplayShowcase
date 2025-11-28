@@ -17,7 +17,7 @@ DECLARE_DELEGATE(FOnItemDefinitionSetSignature);
  * Usage:
  * 1. Attach to an actor representing a world item
  * 2. Set ItemTag to specify which item this represents
- * 3. Bind to OnItemDefinitionSet
+ * 3. Bind to OnItemDefinitionSet if needed
  * 3. Call LoadDefinition() to initialize from data subsystem
  * 4. Component automatically handles pickup zone detection
  */

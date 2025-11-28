@@ -103,7 +103,7 @@ bool UGSGridItemProxy::RemoveProxy()
 {
 	if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
 	{
-		InvController->CallOnGridItemProxyStatusChanged(false, ProxySize);	
+		InvController->BroadcastProxyStatusChanged(false, ProxySize);	
 	}
 	bIsDragging = false;
 	RemoveFromParent();

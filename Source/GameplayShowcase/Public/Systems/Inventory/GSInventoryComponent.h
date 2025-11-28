@@ -90,7 +90,7 @@ public:
 	void UnequipItem(const FGuid& ItemID);
 
 	/** Discards item from inventory, spawning it in the world. */
-	void DiscardItemInstance(const FGuid& ItemID);
+	void DiscardItemInstance(const FGuid& ItemID, bool bIsEquipped);
 	
 	FTryChangeEquipItemStatusSignature TryEquipItemDelegate;
 	FOnItemEquippedSignature OnItemEquippedDelegate;
@@ -123,6 +123,8 @@ private:
 	/** Spawn item actor in the world. */
 	void SpawnWorldItemActor(FItemDefinition&& MovedItemDef, const UObject* WorldContextObject, const FVector& SpawnLocation);
 
+	void SpawnActor(FItemDefinition&& ItemDef, UClass* ClassToSpawn, const UObject* WorldContext, const FVector& Location);
+	
 	/** 
 	 * Changes stack count, respecting max stack size.
 	 * @return Remaining amount that couldn't be added

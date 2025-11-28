@@ -101,11 +101,7 @@ void UGSItemDataSubsystem::AddLoadedAssets(const TArray<FPrimaryAssetId>& Loaded
 			continue;
 		}
 		UGSItemsInfo* DataAsset = Cast<UGSItemsInfo>(LoadedObj);
-		if (!DataAsset)
-		{
-			continue;
-		}
-		if (DataAsset->Items.Num() == 0)
+		if (!DataAsset || DataAsset->Items.Num() == 0)
 		{
 			continue;
 		}

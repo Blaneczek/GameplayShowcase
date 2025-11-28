@@ -30,6 +30,8 @@ AGSWorldItemActor::AGSWorldItemActor()
 	
 	ItemComponent = CreateDefaultSubobject<UGSItemComponent>(TEXT("ItemComponent"));
 	ItemComponent->SetupAttachment(RootComponent);
+
+	bGenerateOverlapEventsDuringLevelStreaming = true;
 }
 
 void AGSWorldItemActor::SetItemMesh()
@@ -46,12 +48,11 @@ void AGSWorldItemActor::SetItemMesh()
 	}));
 }
 
-void AGSWorldItemActor::SetItemDefinition(FItemDefinition&& Def)
+void AGSWorldItemActor::MoveItemDefinition(FItemDefinition&& Def)
 {
 	ItemComponent->MoveItemDefinition(MoveTemp(Def));
 }
 
-// Called when the game starts or when spawned
 void AGSWorldItemActor::BeginPlay()
 {
 	Super::BeginPlay();
@@ -59,7 +60,7 @@ void AGSWorldItemActor::BeginPlay()
 	ItemMesh->OnComponentSleep.AddDynamic(this, &AGSWorldItemActor::OnItemStoppedFalling);
 	ItemComponent->OnItemDefinitionSet.BindUObject(this, &AGSWorldItemActor::OnDefinitionSet);
 
-	if (bLoadDataManually)
+	if (bLoadDataAutomatically)
 	{
 		ItemComponent->LoadItemDefinition();
 	}
@@ -69,7 +70,6 @@ void AGSWorldItemActor::OnItemStoppedFalling(UPrimitiveComponent* SleepingCompon
 {
 	ItemMesh->SetSimulatePhysics(false);
 	ItemMesh->SetEnableGravity(false);
-
 	ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 

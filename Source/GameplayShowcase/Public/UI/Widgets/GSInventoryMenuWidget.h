@@ -26,13 +26,11 @@ class GAMEPLAYSHOWCASE_API UGSInventoryMenuWidget : public UGSWidgetBase
 	GENERATED_BODY()
 
 public:
-	/**
-	 * Attempts to find a free space across all registered inventory grids
-	 * that can fit an item of the given size.
-	 *
-	 * @param ItemSize		desired item size in grid units (rows x columns).
-	 * @param OutGridInfo	information about the found grid and positions (if successful).
-	 * @return				true if free space was found.
+	/** 
+	 * Finds free space in inventory grid that can fit the given item size.
+	 * @param ItemSize		size of item in grid slots
+	 * @param OutGridInfo	filled with grid location if found
+	 * @return				true if space was found
 	 */
 	bool FindFreeSpaceForItem(const FItemSize& ItemSize, FGridInfo& OutGridInfo);
 
@@ -40,9 +38,11 @@ protected:
 	virtual void NativeConstruct() override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonDoubleClick(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
-	
+
+	/** Adds grids created in blueprint. */ 
 	UFUNCTION(BlueprintCallable)
 	void RegisterInventoryGrid(UGSInventoryGrid* NewInventoryGrid);
+	/** Adds equip slots created in blueprint. */ 
 	UFUNCTION(BlueprintCallable)
 	void RegisterEquipGridSlots(TMap<FGameplayTag, UGSGridSlot*> InEquipSlots);
 	

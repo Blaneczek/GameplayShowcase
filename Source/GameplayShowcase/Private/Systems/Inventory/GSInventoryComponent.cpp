@@ -81,13 +81,17 @@ void UGSInventoryComponent::UnequipItem(const FGuid& ItemID)
 	if (FItemInstance* Item = FindItemInstanceByID(ItemID))
 	{
 		UnequipItemDelegate.ExecuteIfBound(Item);
-	}	
+	}
 }
 
-void UGSInventoryComponent::DiscardItemInstance(const FGuid& ItemID)
+void UGSInventoryComponent::DiscardItemInstance(const FGuid& ItemID, bool bIsEquipped)
 {
 	if (FItemInstance* Item = FindItemInstanceByID(ItemID))
 	{
+		if (bIsEquipped)
+		{
+			UnequipItemDelegate.ExecuteIfBound(Item);
+		}
 		const AGSPlayerCharacterBase* Owner = OwningCharacter.Get();
 		const FVector SpawnLocation = Owner ? Owner->GetActorLocation() : FVector::ZeroVector;
 		SpawnWorldItemActor(MoveTemp(Item->GetItemDefinitionMutable()), this, SpawnLocation);
@@ -105,7 +109,7 @@ void UGSInventoryComponent::TryAddItem()
 	// Get first item on floor
 	auto It = ItemsOnFloor.CreateIterator();
 	UGSItemComponent* ItemComponent = It->Get();
-	if (!ItemComponent)
+	if (!ItemComponent || !ItemComponent->HasValidDefinition())
 	{
 		It.RemoveCurrent();
 		return;
@@ -343,23 +347,60 @@ void UGSInventoryComponent::RemoveItemInstance(const FGuid& ItemID)
 
 void UGSInventoryComponent::SpawnWorldItemActor(FItemDefinition&& MovedItemDef, const UObject* WorldContextObject, const FVector& SpawnLocation)
 {
-	const TSubclassOf<AActor> ActorClass = MovedItemDef.WorldActorClass.LoadSynchronous();
-	if (!ActorClass || !WorldContextObject)
+    if (!WorldContextObject)
+    {
+	    return;
+    }
+
+    TSoftClassPtr<AActor> ActorClassPtr = MovedItemDef.WorldActorClass;
+    if (UClass* LoadedClass = ActorClassPtr.Get())
+    {
+    	SpawnActor(MoveTemp(MovedItemDef), LoadedClass, WorldContextObject, SpawnLocation);
+        return;
+    }
+
+    FStreamableManager& Streamable = UAssetManager::GetStreamableManager();
+    TWeakObjectPtr<UGSInventoryComponent> WeakThis(this);
+    TWeakObjectPtr<const UObject> WeakWorldContext(WorldContextObject);
+	
+    Streamable.RequestAsyncLoad(ActorClassPtr.ToSoftObjectPath(), FStreamableDelegate::CreateLambda(
+    	[WeakThis, WeakWorldContext, ActorClassPtr, SpawnLocation, CapturedItemDef = MoveTemp(MovedItemDef)]() mutable
+        {
+			if (!WeakThis.IsValid() || !WeakWorldContext.IsValid())
+            {
+                return;
+            }
+
+            if (UClass* LoadedClass = ActorClassPtr.Get())
+            {
+                WeakThis->SpawnActor(MoveTemp(CapturedItemDef), LoadedClass, WeakWorldContext.Get(), SpawnLocation);
+            }
+		})
+	);
+}
+
+void UGSInventoryComponent::SpawnActor(FItemDefinition&& ItemDef, UClass* ClassToSpawn, const UObject* WorldContext,
+	const FVector& Location)
+{
+	if (!ClassToSpawn || !WorldContext)
 	{
 		return;
 	}
-
-	UWorld* CachedWorld = WorldContextObject->GetWorld();
+	UWorld* CachedWorld = WorldContext->GetWorld();
 	if (!CachedWorld)
 	{
 		return;
 	}
-	
+
 	FTransform SpawnTransform;
-	SpawnTransform.SetLocation(SpawnLocation + FMath::VRand() * 40.f);
-	if (AGSWorldItemActor* SpawnedActor = CachedWorld->SpawnActor<AGSWorldItemActor>(ActorClass, SpawnTransform))
+	const FVector RandomOffset = FMath::VRand() * FMath::FRandRange(0.0f, 50.f);
+	SpawnTransform.SetLocation(Location + FVector(RandomOffset.X, RandomOffset.Y, 0));
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	if (AGSWorldItemActor* SpawnedActor = CachedWorld->SpawnActor<AGSWorldItemActor>(ClassToSpawn, SpawnTransform, SpawnParams))
 	{
-		SpawnedActor->SetItemDefinition(MoveTemp(MovedItemDef));
+		SpawnedActor->MoveItemDefinition(MoveTemp(ItemDef));
 	}
 }
 

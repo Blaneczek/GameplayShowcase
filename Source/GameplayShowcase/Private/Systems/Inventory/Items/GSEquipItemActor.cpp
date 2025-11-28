@@ -9,7 +9,7 @@ AGSEquipItemActor::AGSEquipItemActor()
 	PrimaryActorTick.bCanEverTick = false;
 
 	EquipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("EquipMesh"));
-	EquipMesh->SetupAttachment(RootComponent);
+	SetRootComponent(EquipMesh);
 }
 
 void AGSEquipItemActor::SetEquipMesh(UStaticMesh* Mesh)

@@ -10,7 +10,6 @@
 UGSLootComponent::UGSLootComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-
 }
 
 UGSLootComponent* UGSLootComponent::FindLootComponent(const AActor* Actor)
@@ -20,44 +19,93 @@ UGSLootComponent* UGSLootComponent::FindLootComponent(const AActor* Actor)
 
 void UGSLootComponent::SpawnItems()
 {
-	UWorld* CachedWorld = GetWorld();
-	if (!CachedWorld || !WorldItemClass)
+	const AActor* CachedOwner = GetOwner();
+	if (!CachedOwner)
 	{
 		return;
 	}
 
-	const FVector SpawnLocation = GetOwner()->GetActorLocation() + FVector(0.f, 0.f, SpawnHeightOffset);
-	for (const auto& Item : LootTable)
+	const FVector SpawnLocation = GetOwner()->GetActorLocation() + FVector(0.f, 0.f, HeightOffset);
+	SpawnItemsAtLocation(SpawnLocation);
+}
+
+void UGSLootComponent::SpawnItemsAtLocation(const FVector& SpawnLocation)
+{
+	UWorld* CachedWorld = GetWorld();
+	if (!CachedWorld || !WorldItemClass || !HasValidLootTable())
 	{
+		return;
+	}
+
+	for (const auto& LootEntry : LootTable)
+	{
+		if (!LootEntry.IsValid())
+		{
+			continue;
+		}
 		const float Roll = FMath::FRandRange(0.f, 100.f);
-		if (Roll > Item.DropChance)
+		if (Roll > LootEntry.DropChance)
 		{
 			continue;
 		}
 
-		const int32 Quantity = FMath::RandRange(Item.QuantityRange.Min, Item.QuantityRange.Max);
-		for (int32 i = 0; i < Quantity; i++)
+		const int32 Quantity = FMath::RandRange(LootEntry.QuantityRange.Min, LootEntry.QuantityRange.Max);
+		if (Quantity <= 0)
 		{
-			SpawnWorldItem(CachedWorld, SpawnLocation, Item.Tag);
+			continue;
+		}
+		for (int32 i = 0; i < Quantity; ++i)
+		{
+			const FVector RandomLocation = GetRandomSpawnLocation(SpawnLocation);
+			SpawnWorldItem(CachedWorld, RandomLocation, LootEntry.ItemTag);
 		}		
 	}	
+}
+
+bool UGSLootComponent::HasValidLootTable() const
+{
+	if (LootTable.Num() == 0)
+	{
+		return false;
+	}
+
+	for (const FLootInfo& Entry : LootTable)
+	{
+		if (Entry.IsValid())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void UGSLootComponent::SpawnWorldItem(UWorld* World, const FVector& SpawnLocation, const FGameplayTag& ItemTag)
 {
 	FTransform SpawnTransform;
-	const FVector RandomOffset = FMath::VRand() * 100.f;
-	SpawnTransform.SetLocation(SpawnLocation + FVector(RandomOffset.X, RandomOffset.Y, 0.f));
-	if (AGSWorldItemActor* ItemActor = World->SpawnActorDeferred<AGSWorldItemActor>(
-														WorldItemClass,
-														SpawnTransform,
-														nullptr,
-														nullptr,
-														ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn))
+	SpawnTransform.SetLocation(SpawnLocation);
+	AGSWorldItemActor* ItemActor = World->SpawnActorDeferred<AGSWorldItemActor>(\
+		WorldItemClass,
+		SpawnTransform,
+		nullptr,
+		nullptr,
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+
+	if (ItemActor)
 	{
-		ItemActor->GetItemComponent()->SetItemTag(ItemTag);
-		ItemActor->GetItemComponent()->EnableRandomizer();
-		ItemActor->bLoadDataManually = true;
+		UGSItemComponent* ItemComponent = ItemActor->GetItemComponent();
+		if (!ItemComponent)
+		{
+			return;
+		}
+		ItemComponent->SetItemTag(ItemTag);
+		ItemComponent->EnableRandomizer();
+		ItemActor->bLoadDataAutomatically = true;
 		UGameplayStatics::FinishSpawningActor(ItemActor, SpawnTransform);			
 	}
+}
+
+FVector UGSLootComponent::GetRandomSpawnLocation(const FVector& BaseLocation) const
+{
+	const FVector RandomOffset = FMath::VRand() * FMath::FRandRange(0.0f, RadiusOffset);
+	return BaseLocation + FVector(RandomOffset.X, RandomOffset.Y, 0.0f);
 }

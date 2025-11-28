@@ -32,7 +32,7 @@ class GAMEPLAYSHOWCASE_API UGSLevelingComponent : public UActorComponent
 public:
 	UGSLevelingComponent();
 
-	// Returns the Leveling component if one exists on the specified actor.
+	/** Finds leveling component on an actor. Returns nullptr if not found. */
 	UFUNCTION(BlueprintPure, Category = "GS|Leveling")
 	static UGSLevelingComponent* FindLevelingComponent(const AActor* Actor);
 	

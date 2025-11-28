@@ -91,25 +91,33 @@ void UGSGridItem::CreateItemProxy()
 
 	if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
 	{
-		InvController->CallOnGridItemProxyStatusChanged(true, GridItemSize);
+		InvController->BroadcastProxyStatusChanged(true, GridItemSize);
 		InvController->SetGridItemRef(this);
 	}
 }
 
 void UGSGridItem::SetToRemove(const FGuid& InstanceID)
 {
-	if (InstanceID == ItemID)
+	if (InstanceID != ItemID)
 	{
-		if (ItemTooltip)
-		{
-			ItemTooltip->RemoveFromParent();
-		}
-		if (ItemProxy)
-		{
-			ItemProxy->RemoveProxy();
-		}
-		OnGridItemRemoved.ExecuteIfBound(this);
+		return;
+	}
+	
+	if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
+    {
+    	InvController->OnItemProxyStatusChanged.RemoveAll(this);
+		InvController->OnStackCountChanged.RemoveAll(this);
+		InvController->OnItemRemoved.RemoveAll(this);
+    }
+	if (ItemTooltip)
+	{
+		ItemTooltip->RemoveFromParent();
+	}
+	if (ItemProxy)
+	{
+		ItemProxy->RemoveProxy();
 	}	
+	OnGridItemRemoved.ExecuteIfBound(this);	
 }
 
 FReply UGSGridItem::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -118,7 +126,7 @@ FReply UGSGridItem::NativeOnMouseButtonDown(const FGeometry& InGeometry, const F
 	{
 		if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
 		{
-			if (InvController->IsProxyExists())
+			if (InvController->IsProxyActive())
 			{
 				InvController->TryAddToStack(ItemID);
 				return FReply::Handled();
@@ -201,7 +209,7 @@ void UGSGridItem::BindToInventoryController()
 {
 	if (UGSInventoryMenuWidgetController* InvController = CachedInventoryController.Get())
 	{
-		InvController->OnItemProxyStatusChanged.AddLambda([this](bool bProxyExists, const FItemSize& ProxySize)
+		InvController->OnItemProxyStatusChanged.AddWeakLambda(this, [this](bool bProxyExists, const FItemSize& ProxySize)
 		{
 			bProxyExists ? SetVisibility(ESlateVisibility::HitTestInvisible) : SetVisibility(ESlateVisibility::Visible);
 		});

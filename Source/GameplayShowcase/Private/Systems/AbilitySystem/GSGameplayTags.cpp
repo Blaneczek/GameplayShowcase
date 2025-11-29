@@ -7,6 +7,8 @@ namespace GSGameplayTags
 {
 	/** INPUT **/
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_LeftShift, "Input.LeftShift", "XXX.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Spacebar, "Input.Spacebar", "XXX.");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_LMB, "Input.LMB", "XXX.");
 	/***************/
 	
 	namespace Attributes

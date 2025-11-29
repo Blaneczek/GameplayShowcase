@@ -6,6 +6,7 @@
 #include "GSBlueprintFunctionLibrary.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Components/TextBlock.h"
+#include "Systems/AbilitySystem/GSAbilitySystemComponent.h"
 #include "Systems/AbilitySystem/GSGameplayTags.h"
 #include "Systems/Inventory/Items/GSEquipItemActor.h"
 #include "Systems/Inventory/Items/Fragments/GSFragmentTags.h"
@@ -167,7 +168,7 @@ void FDamageModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 	AdaptTextBlock(ItemTooltip, TextMagicAttack, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
-void FDamageModifier::OnEquip(IAbilitySystemInterface* OwningChar)
+void FDamageModifier::OnEquip(IAbilitySystemInterface* Target)
 {
 	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
@@ -176,12 +177,47 @@ void FDamageModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 		{ GSGameplayTags::Attributes::Primary_MagicDamageMin.GetTag(), GetCurveValue(DamageCurveTable, TEXT("MinMagicAttack")) },
 		{ GSGameplayTags::Attributes::Primary_MagicDamageMax.GetTag(), GetCurveValue(DamageCurveTable, TEXT("MaxMagicAttack")) },
 	};
-	ActiveGE = ApplyGameplayEffect(OwningChar, DamageModifierEffect, TagsToMagnitude);
+	ActiveGE = ApplyGameplayEffect(Target, DamageModifierEffect, TagsToMagnitude);
 }
 
 void FDamageModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
 {
 	Paths.Add(DamageModifierEffect.ToSoftObjectPath());
+}
+
+// ============================================================================
+// FCombatModifier
+// ============================================================================
+
+void FCombatModifier::OnEquip(IAbilitySystemInterface* Target)
+{
+	if (!Target || !AttackAbility.IsValid())
+	{
+		return;
+	}
+
+	if (UGSAbilitySystemComponent* GSASC = Cast<UGSAbilitySystemComponent>(Target->GetAbilitySystemComponent()))
+	{
+		GSASC->AddCharacterAbility(AttackAbility.Get());
+	}
+}
+
+void FCombatModifier::OnUnequip(IAbilitySystemInterface* Target)
+{
+	if (!Target || !AttackAbility.IsValid())
+	{
+		return;
+	}
+
+	if (UGSAbilitySystemComponent* GSASC = Cast<UGSAbilitySystemComponent>(Target->GetAbilitySystemComponent()))
+	{
+		GSASC->RemoveCharacterAbility(AttackAbility.Get());
+	}
+}
+
+void FCombatModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
+{
+	Paths.Add(AttackAbility.ToSoftObjectPath());
 }
 
 // ============================================================================
@@ -199,14 +235,14 @@ void FDefenceModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 	AdaptTextBlock(ItemTooltip, TextMagicDefence, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
-void FDefenceModifier::OnEquip(IAbilitySystemInterface* OwningChar)
+void FDefenceModifier::OnEquip(IAbilitySystemInterface* Target)
 {
 	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
 		{ GSGameplayTags::Attributes::Primary_Defence.GetTag(), GetCurveValue(DefenceCurveTable, TEXT("Defence")) },
 		{ GSGameplayTags::Attributes::Primary_MagicDefence.GetTag(), GetCurveValue(DefenceCurveTable, TEXT("MagicDefence")) },
 	};
-	ActiveGE = ApplyGameplayEffect(OwningChar, DefenceModifierEffect, TagsToMagnitude);
+	ActiveGE = ApplyGameplayEffect(Target, DefenceModifierEffect, TagsToMagnitude);
 }
 
 void FDefenceModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
@@ -224,13 +260,13 @@ void FAttackSpeedModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 	AdaptTextBlock(ItemTooltip, Text, FLinearColor(1.f, 1.f, 1.f, 1.f));
 }
 
-void FAttackSpeedModifier::OnEquip(IAbilitySystemInterface* OwningChar)
+void FAttackSpeedModifier::OnEquip(IAbilitySystemInterface* Target)
 {
 	const TMap<FGameplayTag, int32> TagsToMagnitude
 	{
 		{GSGameplayTags::Attributes::Primary_AttackSpeed.GetTag(), BonusAttackSpeedPercent},
 	};
-	ActiveGE = ApplyGameplayEffect(OwningChar, AttackSpeedModifierEffect, TagsToMagnitude);
+	ActiveGE = ApplyGameplayEffect(Target, AttackSpeedModifierEffect, TagsToMagnitude);
 }
 
 void FAttackSpeedModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)
@@ -259,7 +295,7 @@ void FAttributeModifier::AdaptToWidget(UGSItemTooltip* ItemTooltip) const
 	}
 }
 
-void FAttributeModifier::OnEquip(IAbilitySystemInterface* OwningChar)
+void FAttributeModifier::OnEquip(IAbilitySystemInterface* Target)
 {
 	TMap<FGameplayTag, int32> TagsToMagnitude;
 	TagsToMagnitude.Reserve(AcceptedAttributesNum);
@@ -271,7 +307,7 @@ void FAttributeModifier::OnEquip(IAbilitySystemInterface* OwningChar)
 			TagsToMagnitude.Add(Entry.AttributeTag, Entry.RolledValue);
 		}	
 	}
-	ActiveGE = ApplyGameplayEffect(OwningChar, AttributeModifierEffect, TagsToMagnitude);
+	ActiveGE = ApplyGameplayEffect(Target, AttributeModifierEffect, TagsToMagnitude);
 }
 
 void FAttributeModifier::AddSoftObjectPath(TArray<FSoftObjectPath>& Paths)

@@ -10,6 +10,7 @@
 #include "StructUtils/InstancedStruct.h"
 #include "GSItemFragment.generated.h"
 
+class UGameplayAbility;
 class IAbilitySystemInterface;
 class AGSPlayerCharacterBase;
 class UTextBlock;
@@ -216,7 +217,7 @@ struct FDamageModifier : public FEquipModifier
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
+	virtual void OnEquip(IAbilitySystemInterface* Target) override;
 	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 private:
@@ -225,6 +226,20 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TObjectPtr<UCurveTable> DamageCurveTable = nullptr;
+};
+
+USTRUCT(BlueprintType)
+struct FCombatModifier : public FEquipModifier
+{
+	GENERATED_BODY()
+
+	virtual void OnEquip(IAbilitySystemInterface* Target) override;
+	virtual void OnUnequip(IAbilitySystemInterface* Target);
+	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
+	
+private:
+	UPROPERTY(EditAnywhere)
+	TSoftClassPtr<UGameplayAbility> AttackAbility = nullptr;
 };
 
 /**
@@ -236,7 +251,7 @@ struct FDefenceModifier : public FEquipModifier
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
+	virtual void OnEquip(IAbilitySystemInterface* Target) override;
 	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 private:
@@ -256,7 +271,7 @@ struct FAttackSpeedModifier : public FEquipModifier
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
+	virtual void OnEquip(IAbilitySystemInterface* Target) override;
 	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 private:
@@ -303,7 +318,7 @@ struct FAttributeModifier : public FEquipModifier
 	GENERATED_BODY()
 
 	virtual void AdaptToWidget(UGSItemTooltip* ItemTooltip) const override;
-	virtual void OnEquip(IAbilitySystemInterface* OwningChar) override;
+	virtual void OnEquip(IAbilitySystemInterface* Target) override;
 	virtual void AddSoftObjectPath(TArray<FSoftObjectPath>& Paths) override;
 	
 	/** Draws attributes and their values that will be added to the item. */

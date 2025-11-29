@@ -18,8 +18,13 @@ public:
 	virtual void AbilitySpecInputReleased(FGameplayAbilitySpec& Spec) override;
 	
 	void AddCharacterAbilities(const TArray<TSubclassOf<UGameplayAbility>>& Abilities);
+	void AddCharacterAbility(TSubclassOf<UGameplayAbility> AbilityClass);
+	void RemoveCharacterAbility(TSubclassOf<UGameplayAbility> AbilityClass);
 
 	/* Input */
 	void AbilityInputTagHeld(const FGameplayTag& InputTag);
+	void AbilityInputTagPressed(const FGameplayTag& InputTag);
 	void AbilityInputTagReleased(const FGameplayTag& InputTag);
+
+
 };

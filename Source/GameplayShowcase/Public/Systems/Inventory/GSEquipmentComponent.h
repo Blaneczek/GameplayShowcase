@@ -15,6 +15,7 @@ class AGSEquipItemActor;
 struct FItemInstance;
 class UGSInventoryComponent;
 
+DECLARE_MULTICAST_DELEGATE(FOnWeaponUnequippedSignature);
 
 /**
  * Manages equipped items for a character.
@@ -32,12 +33,14 @@ public:
 	
 	/** Checks if an equipment slot is currently occupied. */
 	FORCEINLINE bool IsSlotEquipped(const FGameplayTag& EquipType) const { return EquippedActors.Contains(EquipType); }
-
+	
 	/** Gets equipped actor for a specific slot. Returns nullptr if slot is empty. */
 	FORCEINLINE AGSEquipItemActor* GetEquippedActor(const FGameplayTag& EquipType) const { return EquippedActors.FindRef(EquipType); }
 
 	/** Gets all currently equipped items. */
 	FORCEINLINE const TMap<FGameplayTag, AGSEquipItemActor*>& GetAllEquippedActors() const { return EquippedActors; }
+
+	FOnWeaponUnequippedSignature OnWeaponUnequippedDelegate;
 	
 protected:
 	virtual void BeginPlay() override;

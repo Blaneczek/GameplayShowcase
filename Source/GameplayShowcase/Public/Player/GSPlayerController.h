@@ -107,6 +107,7 @@ private:
 
 	void PickUp();
 	
+	
 	/** UI **/
 	void InitializeHUD();
 	

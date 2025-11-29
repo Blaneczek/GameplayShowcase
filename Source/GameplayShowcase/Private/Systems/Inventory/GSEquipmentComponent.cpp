@@ -104,6 +104,11 @@ void UGSEquipmentComponent::UnequipItem(FItemInstance* UnequippedItem)
 	FItemDefinition& ItemDefinition = UnequippedItem->GetItemDefinitionMutable();
 	if (FEquipmentFragment* EquipmentFragment = ItemDefinition.FindFragmentByTypeMutable<FEquipmentFragment>())
 	{
+		if (ItemDefinition.Type.RequestDirectParent().MatchesTagExact(GSItemTags::Type::Weapon.GetTag()))
+		{
+			// for combat system 
+			OnWeaponUnequippedDelegate.Broadcast();
+		}
 		EquipmentFragment->OnUnequip(CachedOwnerChar.Get());        	
         RemoveEquippedActor(ItemDefinition.Type.RequestDirectParent(), EquipmentFragment);
 	}

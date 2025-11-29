@@ -13,6 +13,8 @@ namespace GSGameplayTags
 {
 	/** INPUT **/
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LeftShift);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Spacebar);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LMB);
 	/***************/
 
 	namespace Attributes

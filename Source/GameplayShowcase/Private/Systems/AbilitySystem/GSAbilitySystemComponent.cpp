@@ -29,19 +29,47 @@ void UGSAbilitySystemComponent::AddCharacterAbilities(const TArray<TSubclassOf<U
 {
 	for (const auto& AbilityClass : Abilities)
 	{
-		if (AbilityClass)
+		AddCharacterAbility(AbilityClass);
+	}
+}
+
+void UGSAbilitySystemComponent::AddCharacterAbility(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	if (!AbilityClass)
+	{
+		return;
+	}
+	
+	FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
+	if (const UGSGameplayAbility* GSAbility = Cast<UGSGameplayAbility>(AbilitySpec.Ability))
+	{
+		AbilitySpec.GetDynamicSpecSourceTags().AddTag(GSAbility->DefaultInputTag);
+		GiveAbility(AbilitySpec);
+	}
+}
+
+void UGSAbilitySystemComponent::RemoveCharacterAbility(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	if (!AbilityClass)
+	{
+		return;
+	}
+	
+	for (const auto& Spec : GetActivatableAbilities())
+	{
+		if (Spec.Ability && Spec.Ability->GetClass() == AbilityClass)
 		{
-			FGameplayAbilitySpec AbilitySpec = FGameplayAbilitySpec(AbilityClass, 1);
-			if (const UGSGameplayAbility* GSAbility = Cast<UGSGameplayAbility>(AbilitySpec.Ability))
-			{
-				AbilitySpec.GetDynamicSpecSourceTags().AddTag(GSAbility->DefaultInputTag);
-				GiveAbility(AbilitySpec);
-			}
+			SetRemoveAbilityOnEnd(Spec.Handle);
+			break;
 		}
 	}
 }
 
 void UGSAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
+{
+}
+
+void UGSAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
 {
 	if (!InputTag.IsValid())
 	{

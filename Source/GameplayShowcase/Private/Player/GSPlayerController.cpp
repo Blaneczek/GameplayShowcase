@@ -58,7 +58,7 @@ void AGSPlayerController::SetupInputComponent()
 		GSInputComponent->BindAction(EnableLookAction, ETriggerEvent::Started, this, &AGSPlayerController::EnableLook);
 		GSInputComponent->BindAction(EnableLookAction, ETriggerEvent::Completed, this, &AGSPlayerController::EnableLook);
 		GSInputComponent->BindAction(CameraZoomAction, ETriggerEvent::Triggered, this, &AGSPlayerController::CameraZoom);
-
+	
 		// Abilities
 		GSInputComponent->BindAbilityActions(InputConfig, this, &AGSPlayerController::AbilityInputTagPressed,
 																		  &AGSPlayerController::AbilityInputTagHeld,
@@ -202,7 +202,10 @@ void AGSPlayerController::CameraZoom(const FInputActionValue& Value)
 
 void AGSPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
 {
-	
+	if (GetASC())
+	{
+		GetASC()->AbilityInputTagPressed(InputTag);
+	}
 }
 
 void AGSPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
@@ -215,10 +218,7 @@ void AGSPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 
 void AGSPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 {
-	if (GetASC())
-	{
-		GetASC()->AbilityInputTagHeld(InputTag);
-	}
+	
 }
 
 void AGSPlayerController::PickUp()

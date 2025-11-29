@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "GSComboAction.generated.h"
+#include "GSAbilitiesInfo.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class GAMEPLAYSHOWCASE_API UGSComboAction : public UPrimaryDataAsset
+class GAMEPLAYSHOWCASE_API UGSAbilitiesInfo : public UPrimaryDataAsset
 {
 	GENERATED_BODY()
 };

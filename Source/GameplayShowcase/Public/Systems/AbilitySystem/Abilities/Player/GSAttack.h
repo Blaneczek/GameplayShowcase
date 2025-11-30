@@ -6,6 +6,8 @@
 #include "Systems/AbilitySystem/Abilities/GSGameplayAbility.h"
 #include "GSAttack.generated.h"
 
+class UAbilityTask_WaitGameplayEvent;
+class UAbilityTask_PlayMontageAndWait;
 class UGSEquipmentComponent;
 class UGSCombatComponent;
 class UGSComboInfo;
@@ -18,6 +20,8 @@ class GAMEPLAYSHOWCASE_API UGSAttack : public UGSGameplayAbility
 	GENERATED_BODY()
 
 public:
+	UGSAttack();
+	
 	virtual bool CanActivateAbility(
 		const FGameplayAbilitySpecHandle Handle,
 		const FGameplayAbilityActorInfo* ActorInfo,
@@ -29,8 +33,6 @@ public:
 		const FGameplayAbilitySpecHandle Handle,
 		const FGameplayAbilityActorInfo* ActorInfo,
 		const FGameplayAbilityActivationInfo ActivationInfo) override;
-	
-	bool bContinueCombo = false;
 	
 protected:
 	virtual void ActivateAbility(
@@ -45,15 +47,42 @@ protected:
 		const FGameplayAbilityActivationInfo ActivationInfo, 
 		bool bReplicateEndAbility, 
 		bool bWasCancelled) override;
+
+	
+	void OnWeaponUnequipped();
 	
 	UPROPERTY(EditAnywhere, Category="GS|Combat")
-	TObjectPtr<UGSComboInfo> ComboActions = nullptr;
+	TObjectPtr<UGSComboInfo> ComboInfo = nullptr;
 
+private:
+	UFUNCTION()
+    void OnSectionFinished();
+    UFUNCTION()
+    void OnComboWindowStart(FGameplayEventData Payload);
+    UFUNCTION()
+    void OnComboWindowEnd(FGameplayEventData Payload);
+	UFUNCTION()
+	void OnAttackTrace(FGameplayEventData Payload);
+	
+	bool StartNextSection();
+	void CleanupMontageTask();
+	void CleanupEventTasks();
+	void FinishAbility();
+	void CreateEventTasks();
+	
 	TWeakObjectPtr<UGSCombatComponent> CombatComponent;
 	TWeakObjectPtr<UGSEquipmentComponent> EquipmentComponent;
 
-private:
-	void OnWeaponUnequipped();
-
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_PlayMontageAndWait> MontageTask = nullptr;
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> WindowStartTask = nullptr;
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> WindowEndTask = nullptr;
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> AttackTraceTask = nullptr;
 	
+	int32 CurrentSectionIndex = 0;
+	bool bContinueCombo = false;
+	bool bInComboWindow = false;
 };

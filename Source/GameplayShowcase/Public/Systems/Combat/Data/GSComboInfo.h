@@ -7,21 +7,6 @@
 #include "GSComboInfo.generated.h"
 
 
-USTRUCT()
-struct FComboAction
-{
-	GENERATED_BODY()
-
-	FComboAction() = default;
-	
-	UPROPERTY(EditAnywhere)
-	TObjectPtr<UAnimMontage> Montage = nullptr;
-
-	UPROPERTY(EditAnywhere)
-	FText DebugString;
-
-	bool IsValid() const { return Montage != nullptr; }
-};
 /**
  * 
  */
@@ -31,12 +16,21 @@ class GAMEPLAYSHOWCASE_API UGSComboInfo : public UPrimaryDataAsset
 	GENERATED_BODY()
 	
 public:
-	FComboAction GetComboAction(int32 ComboIndex) const;
-	FORCEINLINE int32 GetLastIndex() const { return ComboActions.Num() - 1; };
-	
-	bool HasValidCombo() const;
+	FORCEINLINE FName GetComboSectionNameOnIndex(int32 ComboIndex) const
+	{
+		return ComboSectionNames.IsValidIndex(ComboIndex) ? ComboSectionNames[ComboIndex] : NAME_None;
+	}
+	FORCEINLINE const TArray<FName>& GetComboSectionNames() const { return ComboSectionNames; };
+	FORCEINLINE int32 GetLastComboIndex() const { return ComboSectionNames.Num() - 1; };	
+	FORCEINLINE bool HasValidCombo() const { return !ComboSectionNames.IsEmpty() || !ComboAttackMontage; };
+	FORCEINLINE UAnimMontage* GetMontage() const { return ComboAttackMontage; }
 	
 protected:
+	/** AnimMontage that will play for combo attacks */
 	UPROPERTY(EditAnywhere)
-	TArray<FComboAction> ComboActions;
+	TObjectPtr<UAnimMontage> ComboAttackMontage = nullptr;
+
+	/** Names of the AnimMontage sections that correspond to each stage of the combo attack */
+	UPROPERTY(EditAnywhere)
+	TArray<FName> ComboSectionNames;
 };

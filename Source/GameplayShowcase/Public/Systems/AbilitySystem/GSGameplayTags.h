@@ -11,11 +11,12 @@
  */
 namespace GSGameplayTags
 {
-	/** INPUT **/
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LeftShift);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_Spacebar);
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Input_LMB);
-	/***************/
+	namespace Input
+	{
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(LeftShift);
+        UE_DECLARE_GAMEPLAY_TAG_EXTERN(Spacebar);
+        UE_DECLARE_GAMEPLAY_TAG_EXTERN(LMB);
+	}
 
 	namespace Attributes
 	{
@@ -68,10 +69,15 @@ namespace GSGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_GA_Sprint);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_Requires_ST);
 
-	/** EVENTS **/
-	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Event_Character_Movement_Stopped);
+	namespace Events
+	{
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Movement_Stopped);
 
-	
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_Window_Start);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_Window_End);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_AttackTrace);
+	}
+
 };
 
 

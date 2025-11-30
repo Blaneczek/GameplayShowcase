@@ -5,11 +5,12 @@
 
 namespace GSGameplayTags
 {
-	/** INPUT **/
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_LeftShift, "Input.LeftShift", "XXX.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_Spacebar, "Input.Spacebar", "XXX.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Input_LMB, "Input.LMB", "XXX.");
-	/***************/
+	namespace Input
+	{
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(LeftShift, "Input.LeftShift", "XXX.");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(Spacebar, "Input.Spacebar", "XXX.");
+        UE_DEFINE_GAMEPLAY_TAG_COMMENT(LMB, "Input.LMB", "XXX.");
+	}
 	
 	namespace Attributes
 	{
@@ -66,6 +67,13 @@ namespace GSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_GA_Sprint, "Ability.GA.Sprint", "XXX.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Requires_ST, "Ability.Requires.ST", "XXX.");
 
-	/** EVENTS **/
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Event_Character_Movement_Stopped, "Event.Character.Movement.Stopped", "XXX.");
+	namespace Events
+	{
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_Movement_Stopped, "Event.Character.Movement.Stopped", "XXX.");
+		
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Window_Start, "Event.Montage.Combo.Window.Start", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Window_End, "Event.Montage.Combo.Window.End", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_AttackTrace, "Event.Montage.Combo.AttackTrace", "XXX.");;
+	}
+	
 }

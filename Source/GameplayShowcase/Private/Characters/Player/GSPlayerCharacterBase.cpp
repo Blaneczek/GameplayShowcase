@@ -95,7 +95,7 @@ void AGSPlayerCharacterBase::CheckIfCharacterIsMoving()
 {
 	if (FMath::IsNearlyZero(GetVelocity().SquaredLength(), 1.f))
 	{
-		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, GSGameplayTags::Event_Character_Movement_Stopped, FGameplayEventData());
+		UAbilitySystemBlueprintLibrary::SendGameplayEventToActor(this, GSGameplayTags::Events::Character_Movement_Stopped, FGameplayEventData());
 	}
 }
 

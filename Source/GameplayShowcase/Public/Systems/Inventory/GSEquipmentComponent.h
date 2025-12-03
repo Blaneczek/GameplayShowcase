@@ -40,6 +40,8 @@ public:
 	/** Gets all currently equipped items. */
 	FORCEINLINE const TMap<FGameplayTag, AGSEquipItemActor*>& GetAllEquippedActors() const { return EquippedActors; }
 
+	FORCEINLINE bool IsWeaponEquipped() const { return bWeaponEquipped; }
+	
 	FOnWeaponUnequippedSignature OnWeaponUnequippedDelegate;
 	
 protected:
@@ -76,4 +78,6 @@ private:
 	/** Map of equipped items by equipment type/slot. */
 	UPROPERTY()
 	TMap<FGameplayTag, AGSEquipItemActor*> EquippedActors;
+
+	bool bWeaponEquipped = false;
 };

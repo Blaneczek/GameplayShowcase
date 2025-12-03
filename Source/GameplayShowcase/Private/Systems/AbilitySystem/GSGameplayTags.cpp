@@ -62,6 +62,8 @@ namespace GSGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_PE_Regen, "Status.PE.Regen", "XXX.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_PE_Consuming, "Status.PE.Consuming", "XXX.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_PE_Zero, "Status.PE.Zero", "XXX.");
+	
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Movement_Forbidden, "Status.Movement.Forbidden", "XXX.");
 
 	/** Ability **/
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_GA_Sprint, "Ability.GA.Sprint", "XXX.");
@@ -71,9 +73,12 @@ namespace GSGameplayTags
 	{
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Character_Movement_Stopped, "Event.Character.Movement.Stopped", "XXX.");
 		
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Window, "Event.Montage.Combo.Window", "XXX.");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Window_Start, "Event.Montage.Combo.Window.Start", "XXX.");
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Window_End, "Event.Montage.Combo.Window.End", "XXX.");
-		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_AttackTrace, "Event.Montage.Combo.AttackTrace", "XXX.");;
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Trace, "Event.Montage.Combo.Trace", "XXX.");;
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Trace_Start, "Event.Montage.Combo.Trace.Start", "XXX.");;
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Trace_End, "Event.Montage.Combo.Trace.End", "XXX.");;
 	}
 	
 }

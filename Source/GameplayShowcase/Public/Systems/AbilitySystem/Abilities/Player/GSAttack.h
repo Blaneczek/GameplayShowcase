@@ -59,10 +59,12 @@ private:
     void OnSectionFinished();
     UFUNCTION()
     void OnComboWindowStart(FGameplayEventData Payload);
-    UFUNCTION()
-    void OnComboWindowEnd(FGameplayEventData Payload);
 	UFUNCTION()
-	void OnAttackTrace(FGameplayEventData Payload);
+	void OnComboWindowEnd(FGameplayEventData Payload);
+	UFUNCTION()
+	void OnAttackTraceStart(FGameplayEventData Payload);
+	UFUNCTION()
+	void OnAttackTraceEnd(FGameplayEventData Payload);
 	
 	bool StartNextSection();
 	void CleanupMontageTask();
@@ -76,11 +78,13 @@ private:
 	UPROPERTY()
 	TObjectPtr<UAbilityTask_PlayMontageAndWait> MontageTask = nullptr;
 	UPROPERTY()
-	TObjectPtr<UAbilityTask_WaitGameplayEvent> WindowStartTask = nullptr;
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> WindowStartTask= nullptr;
 	UPROPERTY()
-	TObjectPtr<UAbilityTask_WaitGameplayEvent> WindowEndTask = nullptr;
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> WindowEndTask= nullptr;
 	UPROPERTY()
-	TObjectPtr<UAbilityTask_WaitGameplayEvent> AttackTraceTask = nullptr;
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> TraceStartTask = nullptr;
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> TraceEndTask = nullptr;
 	
 	int32 CurrentSectionIndex = 0;
 	bool bContinueCombo = false;

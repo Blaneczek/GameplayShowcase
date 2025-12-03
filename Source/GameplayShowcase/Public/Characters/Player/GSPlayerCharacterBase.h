@@ -42,9 +42,12 @@ public:
 	FORCEINLINE UGSLevelingComponent* GetLevelingComponent() const { return LevelingComponent; }
 	FORCEINLINE UGSInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 	FORCEINLINE int32 GetPlayerLevel() const { return LevelingComponent->GetLevel(); }
-	
-	virtual void SetMovementSpeed(bool bSprint = true, float NewSpeed = 500.f) override;
 
+	/** IGSAbilityCharacterHelper interface */
+	virtual void SetMovementSpeed(float NewSpeed = 500.f, bool bSetToDefault = false) override;
+	virtual bool IsAttacking() override;
+	virtual bool IsWeaponEquipped() override;
+	
 	void PickUpItem();
 	
 protected:

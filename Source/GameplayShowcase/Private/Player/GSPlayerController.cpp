@@ -10,6 +10,7 @@
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "Input/GSInputComponent.h"
 #include "Player/Camera/GSSpringArmComponent.h"
+#include "Systems/AbilitySystem/GSGameplayTags.h"
 
 
 AGSPlayerController::AGSPlayerController()
@@ -77,23 +78,30 @@ void AGSPlayerController::OnPossess(APawn* aPawn)
 {
 	Super::OnPossess(aPawn);
 	
-	CachedPlayerCharacter = Cast<AGSPlayerCharacterBase>(aPawn);
+	PlayerCharacter = Cast<AGSPlayerCharacterBase>(aPawn);
 	CachedHUD = GetHUD<AGSHUD>();
 	InitializeHUD();
 }
 
 void AGSPlayerController::Move(const FInputActionValue& Value)
 {
-	const FVector2D MovementVector = Value.Get<FVector2D>();
+	FVector2D MovementVector = Value.Get<FVector2D>();
+	
 	const FRotator YawRotation{0, GetControlRotation().Yaw, 0};
-
 	const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 	const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
+	if (!CheckIfCanMove())
+    {
+		const FVector DesiredMoveDirection = (ForwardDirection * MovementVector.X + RightDirection * MovementVector.Y).GetSafeNormal();
+		RotateToDesiredDirection(DesiredMoveDirection);
+		return;
+    }
+	
 	GetPawn()->AddMovementInput(ForwardDirection, MovementVector.X);
 	GetPawn()->AddMovementInput(RightDirection, MovementVector.Y);
 
-	// Rotate a little if input is right/left
+	// Rotate camera a little if input is right/left
 	if (FMath::Abs(MovementVector.Y) > 0.f)
 	{
 		AddYawInput(MovementVector.Y * FreeYawRotationSpeed);
@@ -102,16 +110,16 @@ void AGSPlayerController::Move(const FInputActionValue& Value)
 
 void AGSPlayerController::StopOngoingMovement()
 {
-	if (CachedPlayerCharacter)
+	if (PlayerCharacter)
 	{
 		bWSADMovement = true;
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, CachedPlayerCharacter->GetActorLocation());
-	}	
+		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, PlayerCharacter->GetActorLocation());
+	}
 }
 
 void AGSPlayerController::AutoMove()
 {
-	if (bWSADMovement)
+	if (bWSADMovement || !CheckIfCanMove())
 	{
 		return;
 	}
@@ -123,24 +131,24 @@ void AGSPlayerController::AutoMove()
 	
 	FHitResult CursorHit;
 	GetHitResultUnderCursor(ECC_Visibility, false, CursorHit);
-	if (CursorHit.bBlockingHit && CachedPlayerCharacter)
+	if (CursorHit.bBlockingHit && PlayerCharacter)
 	{
-		const FVector PlayerLocation = CachedPlayerCharacter->GetActorLocation();
+		const FVector PlayerLocation = PlayerCharacter->GetActorLocation();
 		const float DistanceToDestination = (PlayerLocation - CursorHit.Location).SquaredLength();			
 		if (DistanceToDestination >= (AutoMoveAcceptanceRadius * AutoMoveAcceptanceRadius))
 		{
 			const FVector Direction = (CursorHit.Location - PlayerLocation).GetSafeNormal();
-            CachedPlayerCharacter->AddMovementInput(Direction);
+            PlayerCharacter->AddMovementInput(Direction);
 		}
-	}
+	}	
 }
 
 void AGSPlayerController::StopAutoMove()
-{
-	if (bWSADMovement)
+{	
+	if (bWSADMovement || !CheckIfCanMove())
 	{
 		return;
-	}	
+	}
 	if (OnLeftMouseButtonDown.IsBound())
 	{
 		if (OnLeftMouseButtonDown.Execute())
@@ -155,7 +163,7 @@ void AGSPlayerController::StopAutoMove()
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, CursorHitEffect, CursorHit.Location);
 		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, CursorHit.Location);
-	}
+	}	
 }
 
 void AGSPlayerController::WSADMovementEnded()
@@ -193,10 +201,10 @@ void AGSPlayerController::EnableLook(const FInputActionValue& Value)
 
 void AGSPlayerController::CameraZoom(const FInputActionValue& Value)
 {	
-	if (CachedPlayerCharacter)
+	if (PlayerCharacter)
 	{
 		const float ZoomValue = Value.Get<float>();
-		CachedPlayerCharacter->GetCameraArm()->AddZoomInput(ZoomValue * CameraZoomSpeed);
+		PlayerCharacter->GetCameraArm()->AddZoomInput(ZoomValue * CameraZoomSpeed);
 	}
 }
 
@@ -218,14 +226,42 @@ void AGSPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)
 
 void AGSPlayerController::AbilityInputTagHeld(FGameplayTag InputTag)
 {
-	
+	if (GetASC())
+	{
+		GetASC()->AbilityInputTagHeld(InputTag);
+	}
 }
 
 void AGSPlayerController::PickUp()
 {
-	if (CachedPlayerCharacter)
+	if (PlayerCharacter)
 	{
-		CachedPlayerCharacter->PickUpItem();
+		PlayerCharacter->PickUpItem();
+	}
+}
+
+bool AGSPlayerController::CheckIfCanMove()
+{
+	if (GetASC())
+	{		
+		return !GetASC()->HasMatchingGameplayTag(GSGameplayTags::Status_Movement_Forbidden.GetTag());
+	}
+	return true;
+}
+
+void AGSPlayerController::RotateToDesiredDirection(const FVector& DesiredMoveDirection)
+{
+	if (DesiredMoveDirection.SizeSquared() > KINDA_SMALL_NUMBER)
+	{
+		const FRotator TargetRotation = DesiredMoveDirection.Rotation();
+		FRotator NewRotation = FMath::RInterpTo(
+			PlayerCharacter->GetActorRotation(),
+			TargetRotation,
+			GetWorld()->GetDeltaSeconds(),
+			10.f  // e.g. 10–15
+		);
+
+		PlayerCharacter->SetActorRotation(NewRotation);
 	}
 }
 
@@ -233,7 +269,7 @@ void AGSPlayerController::InitializeHUD()
 {
 	if (CachedHUD)
 	{
-		CachedHUD->InitializeOverlayWidget(this, CachedPlayerCharacter, CachedPlayerCharacter->GetAbilitySystemComponent(), CachedPlayerCharacter->GetAttributeSet());
+		CachedHUD->InitializeOverlayWidget(this, PlayerCharacter, PlayerCharacter->GetAbilitySystemComponent(), PlayerCharacter->GetAttributeSet());
 	}
 }
 

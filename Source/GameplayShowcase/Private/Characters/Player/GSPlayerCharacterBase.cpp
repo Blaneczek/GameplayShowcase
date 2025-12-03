@@ -153,21 +153,31 @@ UAttributeSet* AGSPlayerCharacterBase::GetAttributeSet() const
 	return AttributeSet;
 }
 
-void AGSPlayerCharacterBase::SetMovementSpeed(bool bSprint, float NewSpeed)
+void AGSPlayerCharacterBase::SetMovementSpeed(float NewSpeed, bool bSetToDefault)
 {
-	if (bSprint)
-	{
-		GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
-		GetWorldTimerManager().SetTimer(IsMovingTimerHandle, this, &AGSPlayerCharacterBase::CheckIfCharacterIsMoving, 0.25f, true);
-	}
-	else
+	if (bSetToDefault)
 	{
 		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed;
 		if (IsMovingTimerHandle.IsValid())
 		{
 			GetWorldTimerManager().ClearTimer(IsMovingTimerHandle);
-		}
+		}		
 	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+		GetWorldTimerManager().SetTimer(IsMovingTimerHandle, this, &AGSPlayerCharacterBase::CheckIfCharacterIsMoving, 0.25f, true);
+	}
+}
+
+bool AGSPlayerCharacterBase::IsAttacking()
+{
+	return CombatComponent ? CombatComponent->IsAttacking() : false;
+}
+
+bool AGSPlayerCharacterBase::IsWeaponEquipped()
+{
+	return EquipmentComponent ? EquipmentComponent->IsWeaponEquipped(): false;
 }
 
 void AGSPlayerCharacterBase::PickUpItem()

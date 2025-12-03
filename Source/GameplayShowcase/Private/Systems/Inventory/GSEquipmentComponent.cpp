@@ -64,6 +64,11 @@ bool UGSEquipmentComponent::TryEquipItem(FItemInstance* EquippedItem)
 		// but we need to add it to EquippedActors to check later if this type of item is equipped.
 		AGSEquipItemActor* SpawnedActor = SpawnEquippedActor(EquipmentFragment);
 		EquippedActors.Add(ItemDefinition.Type.RequestDirectParent(), SpawnedActor);
+
+		if (ItemDefinition.Type.MatchesTag(GSItemTags::Type::Weapon.GetTag()))
+		{
+			bWeaponEquipped = true;
+		}
 		return true;
 	}
 	return false;
@@ -122,6 +127,15 @@ AGSEquipItemActor* UGSEquipmentComponent::SpawnEquippedActor(FEquipmentFragment*
 
 void UGSEquipmentComponent::RemoveEquippedActor(const FGameplayTag& EquipType, FEquipmentFragment* EquipmentFragment)
 {
+	if (!EquipmentFragment || !EquipType.IsValid())
+	{
+		return;
+	}
+	
+	if (EquipType.MatchesTag(GSItemTags::Type::Weapon.GetTag()))
+	{
+		bWeaponEquipped = false;
+	}
 	EquippedActors.Remove(EquipType);
 	EquipmentFragment->DestroyEquippedActor();
 }

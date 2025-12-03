@@ -4,6 +4,8 @@
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
 #include "GSBlueprintFunctionLibrary.h"
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "Systems/Inventory/Items/GSItemComponent.h"
 #include "Systems/Inventory/Items/GSWorldItemActor.h"
 #include "Systems/Inventory/Items/Fragments/GSItemFragment.h"

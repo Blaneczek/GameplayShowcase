@@ -73,9 +73,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	TObjectPtr<UGSInputConfig> InputConfig;
 	
-	UPROPERTY(EditAnywhere, Category ="Input|CameraDefaults")
+	UPROPERTY(EditAnywhere, Category="Input|CameraDefaults")
 	float YawRotationSpeed = 2.f;
-	UPROPERTY(EditAnywhere, Category ="Input|CameraDefaults")
+	UPROPERTY(EditAnywhere, Category="Input|CameraDefaults")
 	float PitchRotationSpeed = 2.f;
 	UPROPERTY(EditAnywhere, Category="Input|CameraDefaults")
 	float CameraZoomSpeed = 100.f;
@@ -106,7 +106,9 @@ private:
 	void AbilityInputTagHeld(FGameplayTag InputTag);
 
 	void PickUp();
-	
+
+	bool CheckIfCanMove();
+	void RotateToDesiredDirection(const FVector& DesiredMoveDirection);
 	
 	/** UI **/
 	void InitializeHUD();
@@ -124,7 +126,7 @@ private:
 	UGSAbilitySystemComponent* GetASC();
 		
 	UPROPERTY()
-	TObjectPtr<AGSPlayerCharacterBase> CachedPlayerCharacter;
+	TObjectPtr<AGSPlayerCharacterBase> PlayerCharacter;
 	
 	UPROPERTY()
 	TObjectPtr<AGSHUD> CachedHUD;

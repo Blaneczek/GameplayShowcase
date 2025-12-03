@@ -6,6 +6,7 @@
 #include "Abilities/Async/AbilityAsync_WaitGameplayEvent.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
+#include "Systems/AbilitySystem/GSAbilityCharacterHelper.h"
 #include "Systems/AbilitySystem/GSGameplayTags.h"
 #include "Systems/Combat/GSCombatComponent.h"
 #include "Systems/Combat/Data/GSComboInfo.h"
@@ -39,7 +40,7 @@ void UGSAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-
+	
 	CombatComponent = UGSCombatComponent::FindCombatComponent(ActorInfo->AvatarActor.Get());
 	EquipmentComponent = UGSEquipmentComponent::FindEquipmentComponent(ActorInfo->AvatarActor.Get());
 	UGSCombatComponent* CombatComp = CombatComponent.Get();
@@ -49,7 +50,8 @@ void UGSAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
-
+	
+	CombatComp->SetIsAttacking(true);
 	EquipComp->OnWeaponUnequippedDelegate.AddUObject(this, &UGSAttack::OnWeaponUnequipped);
 
 	CurrentSectionIndex = 0;
@@ -67,16 +69,21 @@ void UGSAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 void UGSAttack::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo,
 	const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	if (UGSEquipmentComponent* Equip = EquipmentComponent.Get())
+	if (UGSEquipmentComponent* EquipComp = EquipmentComponent.Get())
 	{
-		Equip->OnWeaponUnequippedDelegate.RemoveAll(this);
+		EquipComp->OnWeaponUnequippedDelegate.RemoveAll(this);
 	}
+	if (UGSCombatComponent* CombatComp = CombatComponent.Get())
+	{
+		CombatComp->SetIsAttacking(false);
+	}
+
 	CleanupMontageTask();
 	CleanupEventTasks();
 
 	bContinueCombo = false;
 	bInComboWindow = false;
-
+	
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
@@ -91,6 +98,11 @@ void UGSAttack::InputPressed(const FGameplayAbilitySpecHandle Handle, const FGam
 
 bool UGSAttack::StartNextSection()
 {
+	if (!CheckCost(CurrentSpecHandle, CurrentActorInfo))
+	{
+		return false;
+	}
+	
 	if (!ComboInfo || !ComboInfo->HasValidCombo())
 	{
 		return false;
@@ -99,9 +111,9 @@ bool UGSAttack::StartNextSection()
 	const int32 LastIndex = ComboInfo->GetLastComboIndex();
 	if (CurrentSectionIndex > LastIndex)
 	{
-		CurrentSectionIndex = 0;
+		CurrentSectionIndex = 0;  
 	}
-
+	
 	CleanupMontageTask();
 	MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 		this,
@@ -115,14 +127,14 @@ bool UGSAttack::StartNextSection()
 	{
 		return false;
 	}
-	MontageTask->OnCompleted.AddDynamic(this, &UGSAttack::OnSectionFinished);
-	MontageTask->OnInterrupted.AddDynamic(this, &UGSAttack::OnSectionFinished);
+ 	MontageTask->OnCompleted.AddDynamic(this, &UGSAttack::OnSectionFinished);
 	MontageTask->OnCancelled.AddDynamic(this, &UGSAttack::OnSectionFinished);
-	MontageTask->OnBlendOut.AddDynamic(this, &UGSAttack::OnSectionFinished);
 
 	MontageTask->ReadyForActivation();
 
 	++CurrentSectionIndex;
+	CommitAbilityCost(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo);
+	
 	return true;
 }
 
@@ -131,9 +143,7 @@ void UGSAttack::CleanupMontageTask()
 	if (MontageTask)
 	{
 		MontageTask->OnCompleted.RemoveDynamic(this, &UGSAttack::OnSectionFinished);
-		MontageTask->OnInterrupted.RemoveDynamic(this, &UGSAttack::OnSectionFinished);
 		MontageTask->OnCancelled.RemoveDynamic(this, &UGSAttack::OnSectionFinished);
-		MontageTask->OnBlendOut.RemoveDynamic(this, &UGSAttack::OnSectionFinished);
 		MontageTask->EndTask();
 		MontageTask = nullptr;
 	}
@@ -151,13 +161,19 @@ void UGSAttack::CleanupEventTasks()
 	{
 		WindowEndTask->EventReceived.RemoveDynamic(this, &UGSAttack::OnComboWindowEnd);
 		WindowEndTask->EndTask();
-		WindowEndTask = nullptr;
+		WindowEndTask= nullptr;
 	}
-	if (AttackTraceTask)
+	if (TraceStartTask)
 	{
-		AttackTraceTask->EventReceived.RemoveDynamic(this, &UGSAttack::OnAttackTrace);
-		AttackTraceTask->EndTask();
-		AttackTraceTask = nullptr;
+		TraceStartTask->EventReceived.RemoveDynamic(this, &UGSAttack::OnAttackTraceStart);
+		TraceStartTask->EndTask();
+		TraceStartTask = nullptr;
+	}
+	if (TraceEndTask)
+	{
+		TraceEndTask->EventReceived.RemoveDynamic(this, &UGSAttack::OnAttackTraceEnd);
+		TraceEndTask->EndTask();
+		TraceEndTask = nullptr;
 	}
 }
 
@@ -189,15 +205,24 @@ void UGSAttack::OnComboWindowEnd(FGameplayEventData Payload)
 	{
 		return;		
 	}
-
 	MontageTask ? MontageTask->ExternalCancel() : FinishAbility();
 }
 
-void UGSAttack::OnAttackTrace(FGameplayEventData Payload)
+void UGSAttack::OnAttackTraceStart(FGameplayEventData Payload)
 {
-	UE_LOG(LogTemp, Warning, TEXT("attack trace"));
+	if (UGSCombatComponent* CombatComp = CombatComponent.Get())
+	{
+		CombatComp->StartComboAttackTrace(ComboInfo->GetAttackRange(), ComboInfo->GetTraceShape());
+	}
 }
 
+void UGSAttack::OnAttackTraceEnd(FGameplayEventData Payload)
+{
+	if (UGSCombatComponent* CombatComp = CombatComponent.Get())
+	{
+		CombatComp->StopComboAttackTrace();
+	}
+}
 void UGSAttack::OnWeaponUnequipped()
 {
 	if (IsActive())
@@ -231,12 +256,21 @@ void UGSAttack::CreateEventTasks()
 		WindowEndTask->Activate();
 	}
 
-	AttackTraceTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+	TraceStartTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
 		this,
-		GSGameplayTags::Events::Montage_Combo_AttackTrace.GetTag());
-	if (AttackTraceTask)
+		GSGameplayTags::Events::Montage_Combo_Trace_Start.GetTag());
+	if (TraceStartTask)
 	{
-		AttackTraceTask->EventReceived.AddDynamic(this, &UGSAttack::OnAttackTrace);
-		AttackTraceTask->Activate();
+		TraceStartTask->EventReceived.AddDynamic(this, &UGSAttack::OnAttackTraceStart);
+		TraceStartTask->Activate();
+	}
+
+	TraceEndTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+		this,
+		GSGameplayTags::Events::Montage_Combo_Trace_End.GetTag());
+	if (TraceEndTask)
+	{
+		TraceEndTask->EventReceived.AddDynamic(this, &UGSAttack::OnAttackTraceEnd);
+		TraceEndTask->Activate();
 	}
 }

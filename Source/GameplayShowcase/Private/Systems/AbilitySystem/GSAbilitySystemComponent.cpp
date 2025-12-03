@@ -67,6 +67,18 @@ void UGSAbilitySystemComponent::RemoveCharacterAbility(TSubclassOf<UGameplayAbil
 
 void UGSAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag)
 {
+	if (!InputTag.IsValid())
+	{
+		return;
+	}
+
+	for (auto& AbilitySpec : GetActivatableAbilities())
+	{
+		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
+		{
+			AbilitySpecInputPressed(AbilitySpec);
+		}
+	}
 }
 
 void UGSAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)

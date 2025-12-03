@@ -64,6 +64,8 @@ namespace GSGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_PE_Regen);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_PE_Consuming);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_PE_Zero);
+	
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Status_Movement_Forbidden);
 
 	/** ABILITIES **/
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ability_GA_Sprint);
@@ -73,9 +75,12 @@ namespace GSGameplayTags
 	{
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Character_Movement_Stopped);
 
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_Window);
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_Window_Start);
 		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_Window_End);
-		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_AttackTrace);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_Trace);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_Trace_Start);
+		UE_DECLARE_GAMEPLAY_TAG_EXTERN(Montage_Combo_Trace_End);
 	}
 
 };

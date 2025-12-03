@@ -5,8 +5,6 @@
 #include "CoreMinimal.h"
 #include "ActiveGameplayEffectHandle.h"
 #include "GameplayTagContainer.h"
-#include "Engine/AssetManager.h"
-#include "Engine/StreamableManager.h"
 #include "StructUtils/InstancedStruct.h"
 #include "GSItemFragment.generated.h"
 

@@ -22,5 +22,11 @@ class GAMEPLAYSHOWCASE_API IGSAbilityCharacterHelper
 	
 public:
 	UFUNCTION(BlueprintCallable, Category="GAS")
-	virtual void SetMovementSpeed(bool bSprint = true, float NewSpeed = 500.f) {};
+	virtual void SetMovementSpeed(float NewSpeed = 500.f, bool bSetToDefault = false) {};
+
+	UFUNCTION(BlueprintCallable, Category="GAS")
+	virtual bool IsAttacking() { return false; }
+
+	UFUNCTION(BlueprintCallable, Category="GAS")
+	virtual bool IsWeaponEquipped() { return false; };
 };

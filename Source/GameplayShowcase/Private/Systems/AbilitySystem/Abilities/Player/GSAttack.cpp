@@ -3,11 +3,11 @@
 
 #include "Systems/AbilitySystem/Abilities/Player/GSAttack.h"
 
-#include "Abilities/Async/AbilityAsync_WaitGameplayEvent.h"
+#include "AbilitySystemBlueprintLibrary.h"
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitGameplayEvent.h"
-#include "Systems/AbilitySystem/GSAbilityCharacterHelper.h"
 #include "Systems/AbilitySystem/GSGameplayTags.h"
+#include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 #include "Systems/Combat/GSCombatComponent.h"
 #include "Systems/Combat/Data/GSComboInfo.h"
 #include "Systems/Inventory/GSEquipmentComponent.h"
@@ -50,6 +50,17 @@ void UGSAttack::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const F
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
+
+	bool bFound = false;
+	float AttackSpeed = UAbilitySystemBlueprintLibrary::GetFloatAttribute(ActorInfo->AvatarActor.Get(), UGSAttributeSetBase::GetAttackSpeedAttribute(), bFound);
+	if (!bFound)
+	{
+		AttackSpeed = 100.f;
+		return;
+	}
+	SetAnimPlayRate(AttackSpeed);
+
+	ActorInfo->AbilitySystemComponent.Get()->AddLooseGameplayTag(GSGameplayTags::Statuses::Movement_Forbidden.GetTag());
 	
 	CombatComp->SetIsAttacking(true);
 	EquipComp->OnWeaponUnequippedDelegate.AddUObject(this, &UGSAttack::OnWeaponUnequipped);
@@ -119,7 +130,7 @@ bool UGSAttack::StartNextSection()
 		this,
 		NAME_None,
 		ComboInfo->GetMontage(),
-		1.f,
+		AnimPlayRate,
 		ComboInfo->GetComboSectionNameOnIndex(CurrentSectionIndex),
 		true);
 
@@ -175,6 +186,12 @@ void UGSAttack::CleanupEventTasks()
 		TraceEndTask->EndTask();
 		TraceEndTask = nullptr;
 	}
+	if (EnableMovementTask)
+	{
+		EnableMovementTask->EventReceived.RemoveDynamic(this, &UGSAttack::OnEnableMovement);
+		EnableMovementTask->EndTask();
+		EnableMovementTask = nullptr;
+	}
 }
 
 void UGSAttack::OnSectionFinished()
@@ -223,6 +240,15 @@ void UGSAttack::OnAttackTraceEnd(FGameplayEventData Payload)
 		CombatComp->StopComboAttackTrace();
 	}
 }
+
+void UGSAttack::OnEnableMovement(FGameplayEventData Payload)
+{
+	if (CurrentActorInfo)
+	{
+		CurrentActorInfo->AbilitySystemComponent.Get()->RemoveLooseGameplayTag(GSGameplayTags::Statuses::Movement_Forbidden.GetTag());
+	}	
+}
+
 void UGSAttack::OnWeaponUnequipped()
 {
 	if (IsActive())
@@ -273,4 +299,18 @@ void UGSAttack::CreateEventTasks()
 		TraceEndTask->EventReceived.AddDynamic(this, &UGSAttack::OnAttackTraceEnd);
 		TraceEndTask->Activate();
 	}
+
+	EnableMovementTask = UAbilityTask_WaitGameplayEvent::WaitGameplayEvent(
+		this,
+		GSGameplayTags::Events::Montage_Combo_EnableMovement.GetTag());
+	if (EnableMovementTask )
+	{
+		EnableMovementTask ->EventReceived.AddDynamic(this, &UGSAttack::OnEnableMovement);
+		EnableMovementTask ->Activate();
+	}
+}
+
+void UGSAttack::SetAnimPlayRate(float AttackSpeed)
+{
+	AnimPlayRate = AttackSpeed / 100.f;
 }

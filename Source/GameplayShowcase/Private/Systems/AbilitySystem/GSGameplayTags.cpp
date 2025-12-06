@@ -47,24 +47,23 @@ namespace GSGameplayTags
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Others_XP, "Attribute.Others.XP", "XXX.");
 	}
 
-	
-	/***************/
+	namespace Statuses
+	{
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(ST_Regen, "Status.ST.Regen", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(ST_Consuming, "Status.ST.Consuming", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(ST_Zero, "Status.ST.Zero", "XXX.");
 
-	/** Statuses **/
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_ST_Regen, "Status.ST.Regen", "XXX.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_ST_Consuming, "Status.ST.Consuming", "XXX.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_ST_Zero, "Status.ST.Zero", "XXX.");
-
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_HP_Regen, "Status.HP.Regen", "XXX.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_HP_Consuming, "Status.HP.Consuming", "XXX.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_HP_Zero, "Status.HP.Zero", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(HP_Regen, "Status.HP.Regen", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(HP_Consuming, "Status.HP.Consuming", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(HP_Zero, "Status.HP.Zero", "XXX.");
 	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_PE_Regen, "Status.PE.Regen", "XXX.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_PE_Consuming, "Status.PE.Consuming", "XXX.");
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_PE_Zero, "Status.PE.Zero", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(PE_Regen, "Status.PE.Regen", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(PE_Consuming, "Status.PE.Consuming", "XXX.");
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(PE_Zero, "Status.PE.Zero", "XXX.");
 	
-	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Status_Movement_Forbidden, "Status.Movement.Forbidden", "XXX.");
-
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Movement_Forbidden, "Status.Movement.Forbidden", "XXX.");
+	}
+	
 	/** Ability **/
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_GA_Sprint, "Ability.GA.Sprint", "XXX.");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(Ability_Requires_ST, "Ability.Requires.ST", "XXX.");
@@ -79,6 +78,8 @@ namespace GSGameplayTags
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Trace, "Event.Montage.Combo.Trace", "XXX.");;
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Trace_Start, "Event.Montage.Combo.Trace.Start", "XXX.");;
 		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_Trace_End, "Event.Montage.Combo.Trace.End", "XXX.");;
+		UE_DEFINE_GAMEPLAY_TAG_COMMENT(Montage_Combo_EnableMovement, "Event.Montage.Combo.EnableMovement", "XXX.");;
+		
 	}
 	
 }

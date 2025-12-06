@@ -65,12 +65,16 @@ private:
 	void OnAttackTraceStart(FGameplayEventData Payload);
 	UFUNCTION()
 	void OnAttackTraceEnd(FGameplayEventData Payload);
+	UFUNCTION()
+	void OnEnableMovement(FGameplayEventData Payload);
 	
 	bool StartNextSection();
 	void CleanupMontageTask();
 	void CleanupEventTasks();
 	void FinishAbility();
 	void CreateEventTasks();
+
+	void SetAnimPlayRate(float AttackSpeed);
 	
 	TWeakObjectPtr<UGSCombatComponent> CombatComponent;
 	TWeakObjectPtr<UGSEquipmentComponent> EquipmentComponent;
@@ -85,8 +89,11 @@ private:
 	TObjectPtr<UAbilityTask_WaitGameplayEvent> TraceStartTask = nullptr;
 	UPROPERTY()
 	TObjectPtr<UAbilityTask_WaitGameplayEvent> TraceEndTask = nullptr;
+	UPROPERTY()
+	TObjectPtr<UAbilityTask_WaitGameplayEvent> EnableMovementTask = nullptr;
 	
 	int32 CurrentSectionIndex = 0;
+	float AnimPlayRate = 1.f;
 	bool bContinueCombo = false;
 	bool bInComboWindow = false;
 };

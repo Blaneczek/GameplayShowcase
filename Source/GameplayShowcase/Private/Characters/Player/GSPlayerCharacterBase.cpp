@@ -41,11 +41,11 @@ void AGSPlayerCharacterBase::InitAbilityActorInfo()
 
 	AbilitySystemComponent->InitAbilityActorInfo(this, this);
 
-	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Status_ST_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
+	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Statuses::ST_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
 							.AddUObject(this, &AGSPlayerCharacterBase::OnSTConsumingTagChanged);
-	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Status_HP_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
+	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Statuses::HP_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
 							.AddUObject(this, &AGSPlayerCharacterBase::OnHPConsumingTagChanged);
-	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Status_PE_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
+	AbilitySystemComponent->RegisterGameplayTagEvent(GSGameplayTags::Statuses::PE_Consuming.GetTag(), EGameplayTagEventType::NewOrRemoved)
 							.AddUObject(this, &AGSPlayerCharacterBase::OnPEConsumingTagChanged);
 }
 
@@ -101,17 +101,17 @@ void AGSPlayerCharacterBase::CheckIfCharacterIsMoving()
 
 void AGSPlayerCharacterBase::OnSTConsumingTagChanged(const FGameplayTag Tag, int32 NewCount)
 {
-	OnConsumingTagChanged(Tag, NewCount, STRegenTimerHandle, STRegenEffectClass, GSGameplayTags::Status_ST_Regen.GetTag());
+	OnConsumingTagChanged(Tag, NewCount, STRegenTimerHandle, STRegenEffectClass, GSGameplayTags::Statuses::ST_Regen.GetTag());
 }
 
 void AGSPlayerCharacterBase::OnHPConsumingTagChanged(const FGameplayTag Tag, int32 NewCount)
 {
-	OnConsumingTagChanged(Tag, NewCount, HPRegenTimerHandle, HPRegenEffectClass, GSGameplayTags::Status_HP_Regen.GetTag());
+	OnConsumingTagChanged(Tag, NewCount, HPRegenTimerHandle, HPRegenEffectClass, GSGameplayTags::Statuses::HP_Regen.GetTag());
 }
 
 void AGSPlayerCharacterBase::OnPEConsumingTagChanged(const FGameplayTag Tag, int32 NewCount)
 {
-	OnConsumingTagChanged(Tag, NewCount, PERegenTimerHandle, PERegenEffectClass, GSGameplayTags::Status_PE_Regen.GetTag());
+	OnConsumingTagChanged(Tag, NewCount, PERegenTimerHandle, PERegenEffectClass, GSGameplayTags::Statuses::PE_Regen.GetTag());
 }
 
 void AGSPlayerCharacterBase::OnConsumingTagChanged(const FGameplayTag Tag, int32 NewCount,

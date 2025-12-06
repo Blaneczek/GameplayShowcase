@@ -5,6 +5,7 @@
 
 #include "KismetTraceUtils.h"
 #include "Characters/Player/GSPlayerCharacterBase.h"
+#include "Systems/AbilitySystem/AttributeSets/GSAttributeSetPlayer.h"
 #include "Systems/Combat/GSDamageable.h"
 
 UGSCombatComponent::UGSCombatComponent()
@@ -28,18 +29,6 @@ void UGSCombatComponent::TickComponent(float DeltaTime, enum ELevelTick TickType
         {
         	DoComboAttackTrace();
         }
-		
-		auto* Owner = CachedOwner.Get();
-		if (!Owner)
-		{
-			return;
-		}
-		
-		const float MoveValue = Owner->GetMesh()->GetAnimInstance()->GetCurveValue(FName("AttackMove"));
-		if (MoveValue > 0.f)
-		{
-			Owner->AddMovementInput(Owner->GetActorForwardVector(), MoveValue * DeltaTime);
-		}
 	}
 }
 
@@ -50,9 +39,10 @@ void UGSCombatComponent::StartComboAttackTrace(float AttackRange, const FCollisi
 	{
 		return;
 	}
+	
 	ComboTraceShape = TraceShape;
     ComboAttackRange = AttackRange;
-	
+
 	LastSweepStartLocation = Owner->GetMesh()->GetSocketLocation("Weapon_1H");
 	const FVector ForwardDirection = Owner->GetMesh()->GetSocketRotation("Weapon_1H").RotateVector(FVector::ForwardVector).GetSafeNormal();
 	LastSweepEndLocation = LastSweepStartLocation + ForwardDirection * ComboAttackRange;

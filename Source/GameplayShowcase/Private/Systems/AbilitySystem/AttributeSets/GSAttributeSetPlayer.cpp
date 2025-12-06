@@ -59,7 +59,7 @@ void UGSAttributeSetPlayer::PostGameplayEffectExecute(const struct FGameplayEffe
 		else if (GetST() >= GetMaxST())
 		{
 			// Remove regen effect if stamina is full
-			Data.Target.RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSGameplayTags::Status_ST_Regen.GetTag()));
+			Data.Target.RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSGameplayTags::Statuses::ST_Regen.GetTag()));
 		}
 	}
 }

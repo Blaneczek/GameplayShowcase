@@ -37,7 +37,7 @@ void UGSAttributeSetBase::PostGameplayEffectExecute(const struct FGameplayEffect
 		else if (GetHP() >= GetMaxHP())
 		{
 			// Remove regen effect if HP is full
-			Data.Target.RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSGameplayTags::Status_HP_Regen.GetTag()));
+			Data.Target.RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSGameplayTags::Statuses::HP_Regen.GetTag()));
 		}
 	}
 	else if (Data.EvaluatedData.Attribute == GetPEAttribute())
@@ -46,7 +46,7 @@ void UGSAttributeSetBase::PostGameplayEffectExecute(const struct FGameplayEffect
 		if (GetPE() >= GetMaxPE())
 		{
 			// Remove regen effect if PE is full
-			Data.Target.RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSGameplayTags::Status_PE_Regen.GetTag()));
+			Data.Target.RemoveActiveEffectsWithGrantedTags(FGameplayTagContainer(GSGameplayTags::Statuses::PE_Regen.GetTag()));
 		}
 	}
 }

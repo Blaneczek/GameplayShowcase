@@ -45,6 +45,7 @@ private:
 	bool bAttacking = false;
 	bool bTraceComboAttack = false;
 	float ComboAttackRange = 0.f;
+	float ComboAttackSpeed = 0.f;
 	FCollisionShape ComboTraceShape;
 	FVector LastSweepEndLocation = FVector::ZeroVector;
 	FVector LastSweepStartLocation = FVector::ZeroVector;

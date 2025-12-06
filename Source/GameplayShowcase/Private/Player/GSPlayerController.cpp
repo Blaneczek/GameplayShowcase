@@ -244,7 +244,7 @@ bool AGSPlayerController::CheckIfCanMove()
 {
 	if (GetASC())
 	{		
-		return !GetASC()->HasMatchingGameplayTag(GSGameplayTags::Status_Movement_Forbidden.GetTag());
+		return !GetASC()->HasMatchingGameplayTag(GSGameplayTags::Statuses::Movement_Forbidden.GetTag());
 	}
 	return true;
 }

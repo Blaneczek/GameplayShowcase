@@ -33,9 +33,6 @@ A modular inventory system featuring fragment composition, equipment management,
 - [System Architecture](#system-architecture)
 - [Core Components](#core-components)
 - [How It Works](#how-it-works)
-- [Getting Started](#getting-started)
-- [Usage Examples](#usage-examples)
-- [Configuration](#configuration)
 - [Technical Details](#technical-details)
 
 ---
@@ -47,11 +44,11 @@ A modular inventory system featuring fragment composition, equipment management,
 - **Procedural Loot** - Probability-based drops with randomized properties
 - **Async Asset Loading** - Thread-safe batch loading with progress tracking
 - **Grid-Based UI** - Drag-and-drop interface with multi-slot items
-- **GAS Integration** - Seamless integration with Gameplay Ability System
+- **GAS Integration** - Integration with Gameplay Ability System
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

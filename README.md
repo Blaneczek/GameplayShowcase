@@ -27,11 +27,19 @@ A modular inventory system featuring fragment composition, equipment management,
   
 ---
 
+<a id="toc"></a>
+
 ## 📋 Table of Contents
 
 - [Features](#features)
 - [System Architecture](#system-architecture)
 - [Core Components](#core-components)
+    - [Item Definition System](#1-item-definition-system)
+    - [Inventory Component](#2-inventory-component)
+    - [Equipment Component](#3-equipment-component)
+    - [Item Component](#4-item-component)
+    - [Item Data Subsystem](#5-item-data-subsystem)
+    - [Loot Component](#6-loot-component)
 - [How It Works](#how-it-works)
 - [Technical Details](#technical-details)
 
@@ -45,6 +53,8 @@ A modular inventory system featuring fragment composition, equipment management,
 - **Async Asset Loading** - Thread-safe batch loading with progress tracking
 - **Grid-Based UI** - Drag-and-drop interface with multi-slot items
 - **GAS Integration** - Integration with Gameplay Ability System
+
+[⬆ Back to Table of Contents](#toc)
 
 ---
 
@@ -81,7 +91,11 @@ A modular inventory system featuring fragment composition, equipment management,
 │                      UI Layer (UMG)                         │
 │      (Grid widgets, item slots, drag-and-drop proxies)      │
 └─────────────────────────────────────────────────────────────┘
+
 ```
+[⬆ Back to Table of Contents](#toc)
+
+---
 
 ## Core Components
 
@@ -343,7 +357,6 @@ private:
 };
 ```
   
-
 ### 2. Inventory Component
 
 Responsible for managing all item interactions for a character. It handles item storage, stacking, equipping, discarding, and communication with UI and gameplay systems in a clean and extensible way.
@@ -498,5 +511,7 @@ The component is fully decoupled from item data and inventory logic, relying on 
 - Designed to be attached to any actor that can drop loot
 - Allows designers to configure loot entirely in the editor
 
+
+[⬆ Back to Table of Contents](#toc)
 
 ---

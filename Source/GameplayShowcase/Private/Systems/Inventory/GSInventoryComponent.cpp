@@ -8,7 +8,7 @@
 #include "Engine/StreamableManager.h"
 #include "Systems/Inventory/Items/GSItemComponent.h"
 #include "Systems/Inventory/Items/GSWorldItemActor.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 
 

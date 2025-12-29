@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 #include "UI/Widgets/GSWidgetBase.h"
 #include "GSGridItem.generated.h"
 

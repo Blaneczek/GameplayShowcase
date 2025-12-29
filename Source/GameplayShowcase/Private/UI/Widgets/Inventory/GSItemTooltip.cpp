@@ -7,7 +7,7 @@
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Systems/Inventory/Items/Data/GSItemDefinition.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 
 

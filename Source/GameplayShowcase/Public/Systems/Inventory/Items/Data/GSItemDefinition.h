@@ -74,9 +74,9 @@ struct FItemDefinition
 
 	UPROPERTY(EditAnywhere)
 	FLinearColor ItemNameColor = FLinearColor(1.f, 0.7f, 0.f,1.f);
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "Level != 0", EditConditionHides))
 	FLinearColor PermittedItemLevelColor = FLinearColor::Green;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "Level != 0", EditConditionHides))
 	FLinearColor ForbiddenItemLevelColor = FLinearColor::Red;
 	
 	/** Fragments that compose this item's behavior and properties. */

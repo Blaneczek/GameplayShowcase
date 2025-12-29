@@ -210,10 +210,7 @@ void AGSPlayerController::CameraZoom(const FInputActionValue& Value)
 
 void AGSPlayerController::AbilityInputTagPressed(FGameplayTag InputTag)
 {
-	if (GetASC())
-	{
-		GetASC()->AbilityInputTagPressed(InputTag);
-	}
+	
 }
 
 void AGSPlayerController::AbilityInputTagReleased(FGameplayTag InputTag)

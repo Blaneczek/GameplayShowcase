@@ -77,28 +77,17 @@ void UGSAbilitySystemComponent::AbilityInputTagHeld(const FGameplayTag& InputTag
 		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
 		{
 			AbilitySpecInputPressed(AbilitySpec);
-		}
-	}
-}
-
-void UGSAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
-{
-	if (!InputTag.IsValid())
-	{
-		return;
-	}
-
-	for (auto& AbilitySpec : GetActivatableAbilities())
-	{
-		if (AbilitySpec.GetDynamicSpecSourceTags().HasTagExact(InputTag))
-		{
-			AbilitySpecInputPressed(AbilitySpec);
 			if (!AbilitySpec.IsActive())
 			{
 				TryActivateAbility(AbilitySpec.Handle);
 			}
 		}
 	}
+}
+
+void UGSAbilitySystemComponent::AbilityInputTagPressed(const FGameplayTag& InputTag)
+{
+	
 }
 
 void UGSAbilitySystemComponent::AbilityInputTagReleased(const FGameplayTag& InputTag)

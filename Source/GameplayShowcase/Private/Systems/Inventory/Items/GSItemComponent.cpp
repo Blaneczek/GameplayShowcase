@@ -9,7 +9,7 @@
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Inventory/Items/Data/GSItemDataSubsystem.h"
 #include "Systems/Inventory/GSInventoryHelper.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 #include "UI/Controllers/GSOverlayWidgetController.h"
 
 UGSItemComponent::UGSItemComponent()

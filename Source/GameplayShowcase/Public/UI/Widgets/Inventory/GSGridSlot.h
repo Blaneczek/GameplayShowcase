@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 #include "GSGridSlot.generated.h"
 
 class UGSGridItem;

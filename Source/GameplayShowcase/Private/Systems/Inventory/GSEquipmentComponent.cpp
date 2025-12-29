@@ -8,7 +8,7 @@
 #include "Systems/Inventory/GSInventoryComponent.h"
 #include "Systems/Inventory/Items/GSItemInstance.h"
 #include "Systems/Inventory/Items/GSItemTags.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 
 
 UGSEquipmentComponent::UGSEquipmentComponent()

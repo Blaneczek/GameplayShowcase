@@ -6,7 +6,7 @@
 #include "GSBlueprintFunctionLibrary.h"
 #include "Components/WidgetComponent.h"
 #include "Systems/Inventory/Items/GSItemComponent.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 
 
 AGSWorldItemActor::AGSWorldItemActor()

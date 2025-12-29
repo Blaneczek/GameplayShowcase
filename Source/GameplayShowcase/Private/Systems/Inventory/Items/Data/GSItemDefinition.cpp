@@ -7,7 +7,7 @@
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBoxSlot.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 #include "UI/Widgets/Inventory/GSItemTooltip.h"
 
 

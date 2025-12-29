@@ -3,7 +3,7 @@
 
 #include "UI/Controllers/GSInventoryMenuWidgetController.h"
 #include "Systems/Inventory/GSInventoryComponent.h"
-#include "Systems/Inventory/Items/Fragments/GSFragmentTags.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSFragmentTags.h"
 #include "Systems/Leveling/GSLevelingComponent.h"
 #include "UI/Widgets/Inventory/GSGridItem.h"
 #include "UI/Widgets/Inventory/GSGridSlot.h"

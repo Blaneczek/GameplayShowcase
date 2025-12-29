@@ -2,8 +2,11 @@
 
 
 #include "Systems/Inventory/Items/GSItemInstance.h"
+
+#include "Engine/AssetManager.h"
+#include "Engine/StreamableManager.h"
 #include "Systems/Inventory/Items/Data/GSItemDataSubsystem.h"
-#include "Systems/Inventory/Items/Fragments/GSItemFragment.h"
+#include "Systems/Inventory/Items/Data/Fragments/GSItemFragment.h"
 
 
 void FItemInstance::Initialize(FItemDefinition&& NewItemDefinition, int32 InitialStackCount)

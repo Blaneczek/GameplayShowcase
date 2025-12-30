@@ -392,6 +392,8 @@ Responsible for managing all equipped items on a character. It acts as the bridg
 
 The component is designed to be inventory-driven and slot-based, allowing items to be equipped and unequipped dynamically while keeping combat, animation, and UI systems loosely coupled.
 
+![eq](https://github.com/user-attachments/assets/ab6cd094-72ef-410c-a44b-9acf92ace807)
+
 **Key Responsibilities**
 - Manage all currently equipped items and their slots
 - Validate equipment rules (slot availability, requirements)
@@ -419,6 +421,8 @@ The component is designed to be inventory-driven and slot-based, allowing items 
 Represents a physical item in the world that the player can interact with and pick up. It acts as the link between world actors and the data-driven item system, handling item identification, definition loading, procedural variation, and pickup detection.
 
 The component is intentionally lightweight and reusable, allowing any actor to become a world item by attaching this component and assigning an item tag.
+
+<img width="800" height="958" alt="image" src="https://github.com/user-attachments/assets/a7778df9-77e6-4c1f-9419-972f5f5cee49" />
 
 **Key Responsibilities**
 - Represent an item instance placed in the game world
@@ -453,6 +457,28 @@ Centralized, game-instance–level system responsible for loading, caching, and 
 
 The subsystem loads all item assets asynchronously at startup and exposes fast, tag-based lookup.
 
+```cpp
+/** 
+	 * Finds item definition by name tag.
+	 * @return	pointer to item definition, or nullptr if not found
+	 */
+	const FItemDefinition* FindItemDefinition(const FGameplayTag& ItemName) const;
+
+	/** 
+	 * Checks if item data has finished loading.
+	 * @return	true if all assets are loaded and ready for use
+	 */
+	FORCEINLINE bool IsDataLoaded() const { return bDataLoaded; }
+
+	/** Gets all loaded item definitions. */
+	FORCEINLINE const TMap<FGameplayTag, FItemDefinition>& GetAllItemDefinitions() const { return ItemDefinitions; }
+
+	/** Gets number of loaded items. */
+	FORCEINLINE int32 GetItemCount() const { return ItemDefinitions.Num(); }
+	
+	FOnItemDataLoadedSignature OnItemDataLoaded;
+```
+
 **Key Responsibilities**
 - Load all item definition assets asynchronously
 - Cache item data for fast runtime access
@@ -480,6 +506,10 @@ The subsystem loads all item assets asynchronously at startup and exposes fast, 
 Data-driven loot drop system responsible for spawning item rewards for world entities such as enemies, chests, or interactive objects. It evaluates configurable loot tables at runtime and spawns physical item actors in the world based on drop chance and quantity rules.
 
 The component is fully decoupled from item data and inventory logic, relying on gameplay tags and the item system to resolve definitions and initialize dropped items.
+
+<img width="800" height="625" alt="image" src="https://github.com/user-attachments/assets/9d627f0e-65cb-45bd-9e2d-cac680914e1c" />
+
+![loot](https://github.com/user-attachments/assets/7ad4b5ed-2429-4aba-8085-42a6f3b0f3aa)
 
 **Key Responsibilities**
 - Define loot tables with drop chance and quantity ranges

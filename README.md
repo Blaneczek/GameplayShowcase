@@ -40,8 +40,14 @@ A modular inventory system featuring fragment composition, equipment management,
     - [Item Component](#4-item-component)
     - [Item Data Subsystem](#5-item-data-subsystem)
     - [Loot Component](#6-loot-component)
+- [UI elements](#ui-elements)
+    - [Inventory Widget Controller](#1-inventory-widget-controller)
+    - [Inventory Widget](#2-inventory-widget)
+    - [Inventory Grid](#3-inventory-grid)
+    - [Grid/Equip Slot](#4-grid/equip-slot)
+    - [Grid Item](#5-grid-item)
+    - [Grid Item Proxy](#6-grid-item-proxy)
 - [How It Works](#how-it-works)
-- [Technical Details](#technical-details)
 
 ---
 
@@ -545,3 +551,29 @@ The component is fully decoupled from item data and inventory logic, relying on 
 [⬆ Back to Table of Contents](#toc)
 
 ---
+
+## UI elements
+
+### 1. Inventory Widget Controller
+
+### 2. Inventory Widget
+
+### 3. Inventory Grid
+
+### 4. Grid/Equip Slot
+
+### 5. Grid Item
+
+### 6. Grid Item Proxy
+
+
+[⬆ Back to Table of Contents](#toc)
+
+---
+
+## How it works
+
+[⬆ Back to Table of Contents](#toc)
+
+---
+
